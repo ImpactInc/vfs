@@ -1,0 +1,99 @@
+package org.forkalsrud.webdav;
+
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Enumeration;
+
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.jackrabbit.webdav.lock.SimpleLockManager;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.SessionManager;
+import org.eclipse.jetty.server.Slf4jRequestLog;
+import org.eclipse.jetty.server.handler.RequestLogHandler;
+import org.eclipse.jetty.server.session.HashSessionIdManager;
+import org.eclipse.jetty.server.session.HashSessionManager;
+import org.eclipse.jetty.server.session.SessionHandler;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+
+
+public class Main {
+ 
+    public static void main(String... args) throws Exception {
+        final Server server = new Server(8080);
+
+        final ServletHandler handler = new ServletHandler();
+
+        HashSessionIdManager hashSessionIdManager = new HashSessionIdManager();
+        SessionHandler sessionHandler = new SessionHandler();
+        SessionManager sessionManager = new HashSessionManager();
+        sessionManager.setSessionIdManager(hashSessionIdManager);
+        sessionHandler.setSessionManager(sessionManager);
+        sessionHandler.setHandler(handler);
+        sessionHandler.setServer(server);
+        server.setSessionIdManager(hashSessionIdManager);
+
+
+        RequestLogHandler requestLogHandler = new RequestLogHandler();
+        Slf4jRequestLog accessLog = new Slf4jRequestLog();
+
+        server.setHandler(sessionHandler);
+
+        SimpleWebdavServlet webdavServlet = new SimpleWebdavServlet();
+        SimpleDavSessionProvider sessionProvider = new SimpleDavSessionProvider();
+
+        String fsRoot = new File(System.getProperty("user.home"), "tmp").getAbsolutePath();
+        SimpleDavLocatorFactory simpleLocatorFactory = new SimpleDavLocatorFactory("/webdav", fsRoot);
+
+        SimpleLockManager simpleLockManager = new SimpleLockManager();
+
+        SimpleDavResourceFactory simpleResourceFactory = new SimpleDavResourceFactory();
+        simpleResourceFactory.setLockManager(simpleLockManager);
+
+        webdavServlet.setDavSessionProvider(sessionProvider);
+        webdavServlet.setLocatorFactory(simpleLocatorFactory);
+        webdavServlet.setResourceFactory(simpleResourceFactory);
+
+        ServletContextHandler context = new ServletContextHandler(handler, "/", ServletContextHandler.SESSIONS);
+
+        final ServletHolder holder = new ServletHolder("webdav", webdavServlet);
+        context.addServlet(holder, "/webdav/*");
+
+        webdavServlet.init(new ServletConfig() {
+            @Override
+            public String getServletName() {
+                return holder.getName();
+            }
+
+            @Override
+            public ServletContext getServletContext() {
+                return handler.getServletContext();
+            }
+
+            @Override
+            public String getInitParameter(String name) {
+                return holder.getInitParameter(name);
+            }
+
+            @Override
+            public Enumeration getInitParameterNames() {
+                return holder.getInitParameterNames();
+            }
+        });
+
+        server.start();
+        server.join();
+    }
+
+
+    
+}
+
