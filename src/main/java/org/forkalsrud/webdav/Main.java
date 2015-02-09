@@ -13,9 +13,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.jackrabbit.webdav.lock.SimpleLockManager;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.SessionManager;
-import org.eclipse.jetty.server.Slf4jRequestLog;
+import org.eclipse.jetty.security.SecurityHandler;
+import org.eclipse.jetty.server.*;
+import org.eclipse.jetty.server.handler.ErrorHandler;
+import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.server.session.HashSessionIdManager;
 import org.eclipse.jetty.server.session.HashSessionManager;
@@ -30,22 +31,26 @@ public class Main {
     public static void main(String... args) throws Exception {
         final Server server = new Server(8080);
 
-        final ServletHandler handler = new ServletHandler();
+        RequestLogHandler requestLogHandler = new RequestLogHandler();
+        Slf4jRequestLog accessLog = new Slf4jRequestLog();
+        requestLogHandler.setRequestLog(accessLog);
+
+        server.setHandler(requestLogHandler);
+
+        final ServletHandler servletHandler = new ServletHandler();
 
         HashSessionIdManager hashSessionIdManager = new HashSessionIdManager();
         SessionHandler sessionHandler = new SessionHandler();
         SessionManager sessionManager = new HashSessionManager();
         sessionManager.setSessionIdManager(hashSessionIdManager);
         sessionHandler.setSessionManager(sessionManager);
-        sessionHandler.setHandler(handler);
+        sessionHandler.setHandler(servletHandler);
         sessionHandler.setServer(server);
         server.setSessionIdManager(hashSessionIdManager);
 
 
-        RequestLogHandler requestLogHandler = new RequestLogHandler();
-        Slf4jRequestLog accessLog = new Slf4jRequestLog();
+        ServletContextHandler context = new ServletContextHandler(requestLogHandler, "/", sessionHandler, null, servletHandler, null, ServletContextHandler.SESSIONS);
 
-        server.setHandler(sessionHandler);
 
         SimpleWebdavServlet webdavServlet = new SimpleWebdavServlet();
         SimpleDavSessionProvider sessionProvider = new SimpleDavSessionProvider();
@@ -62,7 +67,6 @@ public class Main {
         webdavServlet.setLocatorFactory(simpleLocatorFactory);
         webdavServlet.setResourceFactory(simpleResourceFactory);
 
-        ServletContextHandler context = new ServletContextHandler(handler, "/", ServletContextHandler.SESSIONS);
 
         final ServletHolder holder = new ServletHolder("webdav", webdavServlet);
         context.addServlet(holder, "/webdav/*");
@@ -75,7 +79,7 @@ public class Main {
 
             @Override
             public ServletContext getServletContext() {
-                return handler.getServletContext();
+                return servletHandler.getServletContext();
             }
 
             @Override
