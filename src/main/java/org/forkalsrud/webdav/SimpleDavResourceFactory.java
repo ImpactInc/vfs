@@ -17,7 +17,7 @@ public class SimpleDavResourceFactory implements DavResourceFactory {
 
     @Override
     public DavResource createResource(DavResourceLocator locator, DavSession session) throws DavException {
-        return new SimpleDavResource(locator, this,  lockManager, session);
+        return new SimpleDavResource((SimpleResourceLocator)locator, this,  lockManager, session);
     }
 
     public void setLockManager(LockManager mgr) {

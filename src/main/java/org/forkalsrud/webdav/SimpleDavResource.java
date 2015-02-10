@@ -1,10 +1,7 @@
 package org.forkalsrud.webdav;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.webdav.*;
@@ -12,6 +9,7 @@ import org.apache.jackrabbit.webdav.io.InputContext;
 import org.apache.jackrabbit.webdav.io.OutputContext;
 import org.apache.jackrabbit.webdav.lock.*;
 import org.apache.jackrabbit.webdav.property.*;
+import org.apache.jackrabbit.webdav.util.HttpDateFormat;
 
 /**
  * The simplest of WebDAV resources, backed by a the file system with java.io.File
@@ -28,7 +26,7 @@ public class SimpleDavResource implements DavResource {
     );
 
 
-    private DavResourceLocator locator;
+    private SimpleResourceLocator locator;
     private DavResourceFactory factory;
     private LockManager lockManager;
     private DavSession session;
@@ -38,14 +36,20 @@ public class SimpleDavResource implements DavResource {
     protected DavPropertySet properties = new DavPropertySet();
     protected boolean propsInitialized = false;
 
-    public SimpleDavResource(DavResourceLocator locator, DavResourceFactory factory, LockManager lockManager, DavSession session) {
+    public SimpleDavResource(SimpleResourceLocator locator, DavResourceFactory factory, LockManager lockManager, DavSession session) {
         this.locator = locator;
         this.factory = factory;
         this.lockManager = lockManager;
         this.session = session;
+        this.file = locator.getFile();
+    }
 
-        String fullPath = ((SimpleDavLocatorFactory)locator.getFactory()).fileSystemMapper.getRepositoryPath(locator.getResourcePath(), locator.getWorkspacePath());
-        this.file = new File(fullPath);
+    public SimpleDavResource(SimpleDavResource other, File file) {
+        this.locator = new SimpleResourceLocator(other.locator, file);
+        this.factory = other.factory;
+        this.lockManager = other.lockManager;
+        this.session = other.session;
+        this.file = file;
     }
 
     /**
@@ -157,6 +161,9 @@ public class SimpleDavResource implements DavResource {
     @Override
     public void spool(OutputContext outputContext) throws IOException {
 
+        if (!file.isFile()) {
+            return;
+        }
         FileInputStream src = new FileInputStream(file);
         OutputStream dst = outputContext.getOutputStream();
         IOUtils.copy(src, dst);
@@ -275,17 +282,10 @@ public class SimpleDavResource implements DavResource {
     public DavResourceIterator getMembers() {
         ArrayList<DavResource> list = new ArrayList<DavResource>();
         if (exists() && isCollection()) {
-            try {
-                String[] members = file.list();
-                String myPath = locator.getResourcePath();
-                for (String n : members) {
-                    String childPath = myPath + '/' + n;
-                    DavResourceLocator resourceLocator = locator.getFactory().createResourceLocator(locator.getPrefix(), locator.getWorkspacePath(), childPath, false);
-                    DavResource childRes = factory.createResource(resourceLocator, session);
-                    list.add(childRes);
-                }
-            } catch (DavException e) {
-                // should not occur
+            File[] members = file.listFiles();
+            for (File n : members) {
+                SimpleDavResource childRes = new SimpleDavResource(this, n);
+                list.add(childRes);
             }
         }
         return new DavResourceIteratorImpl(list);
@@ -566,6 +566,12 @@ public class SimpleDavResource implements DavResource {
             // Windows XP support
             properties.add(new DefaultDavProperty<String>(DavPropertyName.ISCOLLECTION, "0"));
         }
+
+        String lastModifiedStr = HttpDateFormat.modificationDateFormat().format(new Date(getModificationTime()));
+        properties.add(new DefaultDavProperty<String>(DavPropertyName.GETLASTMODIFIED, lastModifiedStr));
+        properties.add(new DefaultDavProperty<String>(DavPropertyName.CREATIONDATE, lastModifiedStr));
+
+        properties.add(new DefaultDavProperty<String>(DavPropertyName.GETCONTENTLENGTH, file.length() + ""));
 
         /* set current lock information. If no lock is set to this resource,
         an empty lock discovery will be returned in the response. */
