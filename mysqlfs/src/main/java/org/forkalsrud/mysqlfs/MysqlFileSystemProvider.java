@@ -119,7 +119,7 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
         
         Set<T> set = new HashSet<>();
         
-        public Opt(T... args) {
+        public Opt(T[] args) {
             set.addAll(Arrays.asList(args));
         }
     
