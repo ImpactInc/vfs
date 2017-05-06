@@ -15,6 +15,8 @@ create table direntry (
 
 create index idx_parent_name on direntry (parent, name);
 
+create table blocks (dir int unsigned, seq int unsigned, data VARBINARY(8192), PRIMARY KEY (dir, seq));
+
 create table filedata (
   id int unsigned not null key auto_increment,
   data longblob );

@@ -17,5 +17,5 @@ dependencies {
     compile "org.springframework:spring-jdbc:$springVersion"
     testCompile group: 'junit', name: 'junit', version: '4.12'
     testRuntime 'mysql:mysql-connector-java:6.0.6'
-
+    testRuntime "org.apache.tomcat:tomcat-jdbc:7.0.62"
 }

@@ -20,12 +20,14 @@ package org.forkalsrud.mysqlfs;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.*;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Properties;
 
+import org.apache.tomcat.jdbc.pool.DataSource;
 import org.junit.Test;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 
 public class MysqlFileSystemProviderTest {
@@ -33,14 +35,18 @@ public class MysqlFileSystemProviderTest {
     @Test
     public void testPathsGetAndDirectoryStream() throws IOException {
     
-        final DriverManagerDataSource ds = new DriverManagerDataSource("jdbc:mysql://localhost/mysqlfs", "root", "");
+        DataSource pool = new DataSource();
+        pool.setDriverClassName("com.mysql.cj.jdbc.Driver");
+        pool.setUrl("jdbc:mysql://localhost/mysqlfs");
+        pool.setUsername("root");
+        pool.setPassword("");
+ 
         Properties props = new Properties();
         props.setProperty("useSSL", "false");
-        props.setProperty("emulateLocators", "true");
-        ds.setConnectionProperties(props);
+        pool.setDbProperties(props);
         
         MysqlFileSystemProvider provider = new MysqlFileSystemProvider();
-        provider.setDataSource(ds);
+        provider.setDataSource(pool);
     
         FileSystem fs = provider.newFileSystem(URI.create("mysqlfs:testroot/"), null);
         Path root = single(fs.getRootDirectories());
