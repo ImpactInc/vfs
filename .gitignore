@@ -1,8 +1,7 @@
 /.gradle
 /.idea
 /build
-/webdav.iml
 /gradle
-/atlassian-ide-plugin.xml
 /gradlew
 /gradlew.bat
+/out
