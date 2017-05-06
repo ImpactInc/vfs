@@ -5,3 +5,5 @@
 /gradlew
 /gradlew.bat
 /out
+/mysqlfs/build
+/webdav/build
