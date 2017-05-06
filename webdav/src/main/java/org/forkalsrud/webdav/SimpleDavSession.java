@@ -1,9 +1,8 @@
 package org.forkalsrud.webdav;
 
-import org.apache.jackrabbit.webdav.DavSession;
-
-import java.util.ArrayList;
 import java.util.HashSet;
+
+import org.apache.jackrabbit.webdav.DavSession;
 
 /**
  * Created by knut on 15/02/05.

@@ -2,21 +2,13 @@ package org.forkalsrud.webdav;
 
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Enumeration;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.apache.jackrabbit.webdav.lock.SimpleLockManager;
-import org.eclipse.jetty.security.SecurityHandler;
 import org.eclipse.jetty.server.*;
-import org.eclipse.jetty.server.handler.ErrorHandler;
-import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.server.session.HashSessionIdManager;
 import org.eclipse.jetty.server.session.HashSessionManager;
@@ -32,7 +24,7 @@ public class Main {
         final Server server = new Server(8080);
 
         RequestLogHandler requestLogHandler = new RequestLogHandler();
-        Slf4jRequestLog accessLog = new Slf4jRequestLog();
+        RequestLog accessLog = new NCSARequestLog();
         requestLogHandler.setRequestLog(accessLog);
 
         server.setHandler(requestLogHandler);
