@@ -4,7 +4,8 @@ import org.apache.jackrabbit.webdav.DavLocatorFactory;
 import org.apache.jackrabbit.webdav.DavResourceLocator;
 import org.apache.jackrabbit.webdav.util.EncodeUtil;
 
-import java.io.File;
+import java.nio.file.Path;
+
 
 /**
  * Created by knut on 15/02/08.
@@ -16,7 +17,7 @@ public class SimpleResourceLocator implements DavResourceLocator {
     private String resourcePath;
     private SimpleDavLocatorFactory factory;
     private String href;
-    private File file;
+    private Path path;
 
     public SimpleResourceLocator(String prefix, String workspacePath, String resourcePath, SimpleDavLocatorFactory factory) {
         this.prefix = prefix;
@@ -37,7 +38,8 @@ public class SimpleResourceLocator implements DavResourceLocator {
         while (pathRelativeToRoot != null && pathRelativeToRoot.startsWith("/")) {
             pathRelativeToRoot = pathRelativeToRoot.substring(1);
         }
-        this.file = new File(factory.getRoot(), pathRelativeToRoot);
+        Path root = factory.getRoot();
+        this.path = pathRelativeToRoot != null ? root.resolve(pathRelativeToRoot) : root;
     }
 
     private String computeHref(String prefix, String resourcePath) {
@@ -55,11 +57,11 @@ public class SimpleResourceLocator implements DavResourceLocator {
     }
 
 
-    public SimpleResourceLocator(SimpleResourceLocator other, File file) {
+    public SimpleResourceLocator(SimpleResourceLocator other, Path path) {
         this.prefix = other.prefix;
         this.workspacePath = other.workspacePath;
         this.factory = other.factory;
-        this.file = file;
+        this.path = path;
         this.resourcePath = getRepositoryPath();
         this.href = computeHref(this.prefix, this.resourcePath);
     }
@@ -185,15 +187,11 @@ public class SimpleResourceLocator implements DavResourceLocator {
      */
     @Override
     public String getRepositoryPath() {
-        String rootPath = factory.getRoot().getAbsolutePath();
-        String fullPath = file.getAbsolutePath();
-        if (!fullPath.startsWith(rootPath)) {
-            throw new IllegalStateException("haywire root " + rootPath + " for resource " + fullPath);
-        }
-        return fullPath.substring(rootPath.length());
+        Path fullPath = path.toAbsolutePath();
+        return "/" + factory.getRoot().relativize(fullPath).toString();
     }
 
-    public File getFile() {
-        return file;
+    public Path getPath() {
+        return path;
     }
 }

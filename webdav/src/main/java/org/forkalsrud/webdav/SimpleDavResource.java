@@ -1,9 +1,18 @@
 package org.forkalsrud.webdav;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.webdav.*;
 import org.apache.jackrabbit.webdav.io.InputContext;
 import org.apache.jackrabbit.webdav.io.OutputContext;
@@ -12,7 +21,7 @@ import org.apache.jackrabbit.webdav.property.*;
 import org.apache.jackrabbit.webdav.util.HttpDateFormat;
 
 /**
- * The simplest of WebDAV resources, backed by a the file system with java.io.File
+ * The simplest of WebDAV resources, backed by a the file system with java.nio.file.Path
  * Created by knut on 15/02/05.
  */
 public class SimpleDavResource implements DavResource {
@@ -31,7 +40,7 @@ public class SimpleDavResource implements DavResource {
     private LockManager lockManager;
     private DavSession session;
 
-    private File file;
+    private Path file;
 
     protected DavPropertySet properties = new DavPropertySet();
     protected boolean propsInitialized = false;
@@ -41,10 +50,10 @@ public class SimpleDavResource implements DavResource {
         this.factory = factory;
         this.lockManager = lockManager;
         this.session = session;
-        this.file = locator.getFile();
+        this.file = locator.getPath();
     }
 
-    public SimpleDavResource(SimpleDavResource other, File file) {
+    public SimpleDavResource(SimpleDavResource other, Path file) {
         this.locator = new SimpleResourceLocator(other.locator, file);
         this.factory = other.factory;
         this.lockManager = other.lockManager;
@@ -81,7 +90,7 @@ public class SimpleDavResource implements DavResource {
      */
     @Override
     public boolean exists() {
-        return file.exists();
+        return Files.exists(file);
     }
 
     /**
@@ -91,7 +100,7 @@ public class SimpleDavResource implements DavResource {
      */
     @Override
     public boolean isCollection() {
-        return file.isDirectory();
+        return Files.isDirectory(file);
     }
 
     /**
@@ -101,7 +110,7 @@ public class SimpleDavResource implements DavResource {
      */
     @Override
     public String getDisplayName() {
-        return file.getName();
+        return file.getFileName().toString();
     }
 
     /**
@@ -147,7 +156,11 @@ public class SimpleDavResource implements DavResource {
      */
     @Override
     public long getModificationTime() {
-        return file.lastModified();
+        try {
+            return Files.getLastModifiedTime(file).toMillis();
+        } catch (IOException e) {
+            return 0L;
+        }
     }
 
     /**
@@ -161,14 +174,9 @@ public class SimpleDavResource implements DavResource {
     @Override
     public void spool(OutputContext outputContext) throws IOException {
 
-        if (!file.isFile()) {
-            return;
-        }
-        FileInputStream src = new FileInputStream(file);
         OutputStream dst = outputContext.getOutputStream();
-        IOUtils.copy(src, dst);
+        Files.copy(file, dst);
         dst.close();
-        src.close();
     }
 
     /**
@@ -280,12 +288,15 @@ public class SimpleDavResource implements DavResource {
      */
     @Override
     public DavResourceIterator getMembers() {
-        ArrayList<DavResource> list = new ArrayList<DavResource>();
+
+        List<DavResource> list = new ArrayList<DavResource>();
         if (exists() && isCollection()) {
-            File[] members = file.listFiles();
-            for (File n : members) {
-                SimpleDavResource childRes = new SimpleDavResource(this, n);
-                list.add(childRes);
+            try {
+                for (Path child : Files.newDirectoryStream(file)) {
+                    list.add(new SimpleDavResource(this, child));
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         }
         return new DavResourceIteratorImpl(list);
@@ -312,17 +323,12 @@ public class SimpleDavResource implements DavResource {
             String memberPath = resource.getLocator().getRepositoryPath();
             String memberName = memberPath.substring(memberPath.lastIndexOf('/') + 1);
 
-            File f = new File(this.file, memberName);
+            Path p = this.file.resolve(memberName);
             if (resource.isCollection()) {
-                boolean success = f.mkdir();
-                if (!success) {
-                    throw new IOException("Unable to create directory: " + f.getAbsolutePath());
-                }
+                Files.createDirectory(p);
             } else {
                 InputStream src = inputContext.getInputStream();
-                FileOutputStream dst = new FileOutputStream(f);
-                IOUtils.copy(src, dst);
-                dst.close();
+                Files.copy(src, p);
                 src.close();
             }
         } catch (IOException e) {
@@ -348,12 +354,9 @@ public class SimpleDavResource implements DavResource {
         try {
             String memberPath = member.getLocator().getRepositoryPath();
             String memberName = memberPath.substring(memberPath.lastIndexOf('/') + 1);
-
-            File f = new File(file, memberName);
-            boolean success = f.delete();
-            if (!success) {
-                throw new IOException("Unable to delete: " + f.getAbsolutePath());
-            }
+            
+            Path p = file.resolve(memberName);
+            Files.delete(p);
         } catch (IOException e) {
             throw new DavException(DavServletResponse.SC_INTERNAL_SERVER_ERROR, e);
         }
@@ -367,7 +370,11 @@ public class SimpleDavResource implements DavResource {
      */
     @Override
     public void move(DavResource destination) throws DavException {
-        file.renameTo(((SimpleDavResource)destination).file);
+        try {
+            Files.move(file, ((SimpleDavResource)destination).file);
+        } catch (IOException e) {
+            throw new DavException(DavServletResponse.SC_INTERNAL_SERVER_ERROR, e);
+        }
     }
 
     /**
@@ -379,44 +386,51 @@ public class SimpleDavResource implements DavResource {
      */
     @Override
     public void copy(DavResource destination, boolean shallow) throws DavException {
-        File destinationFile = ((SimpleDavResource)destination).file;
 
+        final Path destinationFile = ((SimpleDavResource)destination).file;
         try {
-            if (file.isDirectory()) {
-                destinationFile.mkdir();
+            if (Files.isDirectory(file)) {
+                Files.createDirectory(destinationFile);
                 if (!shallow) {
-                    copyTree(file, destinationFile);
+                    final Path srcRoot = file;
+                    final Path dstRoot = destinationFile;
+    
+                    Files.walkFileTree(file, new FileVisitor<Path>() {
+                        
+                        Path dstFor(Path src) {
+                            return dstRoot.resolve(srcRoot.relativize(src));
+                        }
+                        
+                        @Override
+                        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                                throws IOException {
+                                Files.createDirectory(dstFor(dir));
+                            return FileVisitResult.CONTINUE;
+                        }
+            
+                        @Override
+                        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                            Files.copy(file, dstFor(file));
+                            return FileVisitResult.CONTINUE;
+                        }
+            
+                        @Override
+                        public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                            return FileVisitResult.SKIP_SUBTREE;
+                        }
+            
+                        @Override
+                        public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                            return FileVisitResult.CONTINUE;
+                        }
+                    });
                 }
-            } else if (file.isFile()) {
-                copyFile(file, destinationFile);
+            } else if (Files.isRegularFile(file)) {
+                Files.copy(file, destinationFile);
             }
         } catch (IOException e) {
             throw new DavException(DavServletResponse.SC_INTERNAL_SERVER_ERROR, e);
         }
-    }
-
-
-    private void copyTree(File srcDir, File dstDir) throws IOException {
-        File[] entries = srcDir.listFiles();
-        for (File f : entries) {
-            File copy = new File(dstDir, f.getName());
-            if (f.isDirectory()) {
-                copy.mkdir();
-                copyTree(f, copy);
-            } else if (f.isFile()) {
-                copyFile(f, copy);
-            } else {
-                throw new IOException("Don't know what to do with: " + f.getAbsolutePath());
-            }
-        }
-    }
-
-    private void copyFile(File in, File out) throws IOException {
-        FileInputStream src = new FileInputStream(in);
-        FileOutputStream dst = new FileOutputStream(out);
-        IOUtils.copy(src, dst);
-        dst.close();
-        src.close();
     }
 
 
@@ -552,26 +566,34 @@ public class SimpleDavResource implements DavResource {
         if (!exists() || propsInitialized) {
             return;
         }
-
-        // set (or reset) fundamental properties
-        if (getDisplayName() != null) {
+    
+        BasicFileAttributeView attrView = Files.getFileAttributeView(file, BasicFileAttributeView.class);
+        try {
+            BasicFileAttributes attrs = attrView.readAttributes();
             properties.add(new DefaultDavProperty<String>(DavPropertyName.DISPLAYNAME, getDisplayName()));
-        }
-        if (isCollection()) {
-            properties.add(new ResourceType(ResourceType.COLLECTION));
-            // Windows XP support
-            properties.add(new DefaultDavProperty<String>(DavPropertyName.ISCOLLECTION, "1"));
-        } else {
-            properties.add(new ResourceType(ResourceType.DEFAULT_RESOURCE));
-            // Windows XP support
-            properties.add(new DefaultDavProperty<String>(DavPropertyName.ISCOLLECTION, "0"));
-        }
 
-        String lastModifiedStr = HttpDateFormat.modificationDateFormat().format(new Date(getModificationTime()));
-        properties.add(new DefaultDavProperty<String>(DavPropertyName.GETLASTMODIFIED, lastModifiedStr));
-        properties.add(new DefaultDavProperty<String>(DavPropertyName.CREATIONDATE, lastModifiedStr));
+            if (attrs.isDirectory()) {
+                properties.add(new ResourceType(ResourceType.COLLECTION));
+                // Windows XP support
+                properties.add(new DefaultDavProperty<String>(DavPropertyName.ISCOLLECTION, "1"));
+            }
+            if (attrs.isRegularFile()) {
+                properties.add(new ResourceType(ResourceType.DEFAULT_RESOURCE));
+                // Windows XP support
+                properties.add(new DefaultDavProperty<String>(DavPropertyName.ISCOLLECTION, "0"));
+            }
+            HttpDateFormat fmt = HttpDateFormat.modificationDateFormat();
+            long modified = attrs.lastModifiedTime().toMillis();
+            String lastModifiedStr = fmt.format(new Date(modified));
+            properties.add(new DefaultDavProperty<String>(DavPropertyName.GETLASTMODIFIED, lastModifiedStr));
+            long created = attrs.creationTime().toMillis();
+            String createdStr = fmt.format(new Date(created));
+            properties.add(new DefaultDavProperty<String>(DavPropertyName.CREATIONDATE, createdStr));
 
-        properties.add(new DefaultDavProperty<String>(DavPropertyName.GETCONTENTLENGTH, file.length() + ""));
+            properties.add(new DefaultDavProperty<String>(DavPropertyName.GETCONTENTLENGTH, String.valueOf(attrs.size())));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         /* set current lock information. If no lock is set to this resource,
         an empty lock discovery will be returned in the response. */

@@ -1,11 +1,12 @@
 package org.forkalsrud.webdav;
 
-import org.apache.jackrabbit.webdav.AbstractLocatorFactory;
+import java.io.File;
+import java.nio.file.Path;
+
 import org.apache.jackrabbit.webdav.DavLocatorFactory;
 import org.apache.jackrabbit.webdav.DavResourceLocator;
 import org.apache.jackrabbit.webdav.util.EncodeUtil;
 
-import java.io.File;
 
 /**
  * Created by knut on 15/02/05.
@@ -13,11 +14,11 @@ import java.io.File;
 public class SimpleDavLocatorFactory implements DavLocatorFactory {
 
     private String urlPathPrefix;
-    private File root;
+    private Path root;
 
     public SimpleDavLocatorFactory(String urlPrefix, String fileSystemPrefix) {
         this.urlPathPrefix = urlPrefix;
-        this.root = new File(fileSystemPrefix);
+        this.root = new File(fileSystemPrefix).toPath();
     }
 
 
@@ -142,7 +143,7 @@ public class SimpleDavLocatorFactory implements DavLocatorFactory {
     }
 
 
-    public File getRoot() {
+    public Path getRoot() {
         return root;
     }
 }
