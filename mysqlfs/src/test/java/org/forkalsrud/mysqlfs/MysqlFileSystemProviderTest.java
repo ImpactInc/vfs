@@ -18,39 +18,55 @@
  */
 package org.forkalsrud.mysqlfs;
 
+import static org.junit.Assert.assertEquals;
+
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
-import java.nio.file.DirectoryStream;
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.util.Properties;
 
 import org.apache.tomcat.jdbc.pool.DataSource;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 
 public class MysqlFileSystemProviderTest {
 
-    @Test
-    public void testPathsGetAndDirectoryStream() throws IOException {
-    
+    static Path root;
+
+    @BeforeClass
+    public static void mount() throws IOException {
         DataSource pool = new DataSource();
         pool.setDriverClassName("com.mysql.cj.jdbc.Driver");
         pool.setUrl("jdbc:mysql://localhost/mysqlfs");
         pool.setUsername("root");
         pool.setPassword("");
- 
+    
         Properties props = new Properties();
         props.setProperty("useSSL", "false");
         pool.setDbProperties(props);
-        
+    
         MysqlFileSystemProvider provider = new MysqlFileSystemProvider();
         provider.setDataSource(pool);
     
         FileSystem fs = provider.newFileSystem(URI.create("mysqlfs:testroot/"), null);
-        Path root = single(fs.getRootDirectories());
+        root = single(fs.getRootDirectories());
+    }
+    static <T> T single(Iterable<T> all) {
+        return all.iterator().next();
+    }
+    
+    @AfterClass
+    public static void umount() throws IOException {
+        root.getFileSystem().close();
+    }
 
+    @Test
+    public void testPathsGetAndDirectoryStream() throws IOException {
+    
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(root)) {
             for (Path p : stream) {
                 if (Files.isRegularFile(p)) {
@@ -62,10 +78,29 @@ public class MysqlFileSystemProviderTest {
                 }
             }
         }
-
     }
 
-    <T> T single(Iterable<T> all) {
-        return all.iterator().next();
+    
+    @Test
+    public void testWriteSmallFile() throws IOException {
+    
+        assertEquals(3263, lengthOfwrittenFile("elg.png"));
+    }
+    
+    @Test
+    public void testWriteLargeFile() throws IOException {
+    
+        assertEquals(15150, lengthOfwrittenFile("gravatar.jpeg"));
+    }
+    
+    public int lengthOfwrittenFile(String name) throws IOException {
+        
+        InputStream in = getClass().getResourceAsStream("/" + name);
+        
+        Path dst = root.resolve(name);
+        Files.copy(in, dst);
+        in.close();
+        
+        return (int)Files.size(dst);
     }
 }

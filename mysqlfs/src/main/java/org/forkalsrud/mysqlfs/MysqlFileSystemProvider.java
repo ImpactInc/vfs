@@ -24,9 +24,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.FileAttributeView;
+import java.nio.file.attribute.*;
 import java.nio.file.spi.FileSystemProvider;
 import java.sql.*;
 import java.util.*;
@@ -253,17 +251,24 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
             @Override
             public void flush() {
                 byte[] data;
-                if (bufPos == 0 && flushed) {
+                if (bufPos == 0 || flushed) {
                     return;
                 } else if (bufPos < buf.length) {
+                    // MySQL only stores entire byte arrays
                     data = new byte[bufPos];
-                    System.arraycopy(data, 0, buf, 0, bufPos);
+                    System.arraycopy(buf, 0, data, 0, bufPos);
                 } else {
                     data = buf;
                 }
-                tmpl.update("REPLACE INTO blocks SET data = ? WHERE dir = ? AND seq = ?", data, id, bufNo);
+                tmpl.update("REPLACE INTO blocks SET data = ?, dir = ?, seq = ?", data, id, bufNo);
                 tmpl.update("UPDATE direntry SET size = ?, mtime = ? WHERE id = ?", pos, new Date(), id);
                 flushed = true;
+            }
+    
+            @Override
+            public void close() throws IOException {
+                flush();
+                super.close();
             }
 
             void next() {
@@ -276,6 +281,7 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
                 System.arraycopy(src, srcPos, buf, bufPos, length);
                 bufPos += length;
                 pos += length;
+                flushed = false;
             }
         
             public void write(byte src[], int off, int len) throws IOException {
@@ -286,7 +292,7 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
                     int l = Math.min(buf.length - bufPos, remainingToWrite);
                     copy(src, srcPos, l);
                     srcPos += l;
-                    pos += l;
+                    remainingToWrite -= l;
                     if (bufPos == buf.length) {
                         next();
                     }
@@ -367,16 +373,15 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void createDirectory(Path dir, FileAttribute<?>... attrs) throws IOException {
-        throw new ReadOnlyFileSystemException();
+        create(dir, "dir");
     }
 
     @Override
     public void delete(Path path) throws IOException {
         long id = resolve(path);
-        if (id == 0L) {
-            throw new IOException("Path does not exist: " + path);
+        if (id > 0L) {
+            delete(id);
         }
-        delete(id);
     }
     
     void delete(long id) throws IOException {
@@ -506,11 +511,34 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void checkAccess(Path path, AccessMode... modes) throws IOException {
-        // noop
+        long id = resolve(path);
+        if (id == 0L) {
+            throw new NoSuchFileException(path.toString());
+        }
     }
 
     @Override
-    public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
+    public <V extends FileAttributeView> V getFileAttributeView(final Path path, Class<V> type, final LinkOption... options) {
+    
+        if (type == BasicFileAttributeView.class) {
+            return (V)new BasicFileAttributeView() {
+    
+                @Override
+                public String name() {
+                    return "basic";
+                }
+    
+                @Override
+                public BasicFileAttributes readAttributes() throws IOException {
+                    return MysqlFileSystemProvider.this.readAttributes(path, BasicFileAttributes.class, options);
+                }
+    
+                @Override
+                public void setTimes(FileTime lastModifiedTime, FileTime lastAccessTime, FileTime createTime) throws IOException {
+                    MysqlFileSystemProvider.this.setTimes(path, lastModifiedTime, lastAccessTime, createTime);
+                }
+            };
+        }
         return null;
     }
 
@@ -520,6 +548,10 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
         if (type != BasicFileAttributes.class) {
             throw new UnsupportedOperationException();
         }
+        long id = resolve(path);
+        if (id == 0L) {
+            throw new NoSuchFileException(path.toString());
+        }
         return (A) tmpl.query("SELECT id, type, size, ctime, mtime, atime FROM direntry WHERE id = ?", new ResultSetExtractor<MysqlAttributes>() {
 
             public MysqlAttributes extractData(ResultSet rs) throws SQLException, DataAccessException {
@@ -528,7 +560,7 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
                 }
                 return new MysqlAttributes(rs.getLong(1), rs.getString(2), rs.getLong(3), rs.getTimestamp(4), rs.getTimestamp(5), rs.getTimestamp(6));
             }
-        }, resolve(path));
+        }, id);
     }
 
     @Override
@@ -541,16 +573,29 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
         throw new ReadOnlyFileSystemException();
     }
     
+
+    void setTimes(Path path, FileTime lastModifiedTime, FileTime lastAccessTime, FileTime createTime) throws IOException {
+        long id = resolve(path);
+        if (id == 0L) {
+            return;
+        }
+        tmpl.update("UPDATE direntry SET mtime = ?, atime = ?, ctime = ? WHERE id = ?",
+                new Date(lastModifiedTime.toMillis()),
+                new Date(lastAccessTime.toMillis()),
+                new Date(createTime.toMillis()),
+                id);
+    }
     
+
     long resolve(Path path) {
         if (!(path.getFileSystem() instanceof MysqlFileSystem)) {
             throw new RuntimeException("Bad filesystem: " + path.getFileSystem());
         }
-        Long id = tmpl.queryForObject("SELECT id FROM direntry WHERE parent = 0 AND name = ?", Long.class,
+        Long id = queryFor(Long.class, "SELECT id FROM direntry WHERE parent = 0 AND name = ?",
                 ((MysqlFileSystem)path.getFileSystem()).root);
         Iterator<Path> it = path.iterator();
         while (it.hasNext() && id != null) {
-            id = tmpl.queryForObject("SELECT id FROM direntry WHERE parent = ? AND name = ?", Long.class,
+            id = queryFor(Long.class, "SELECT id FROM direntry WHERE parent = ? AND name = ?",
                     id, it.next().getFileName().toString());
         }
         return id != null ? id : 0L;
@@ -572,7 +617,8 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
             throw new IOException("Create directory first! " + path);
         }
         String sql = "INSERT INTO direntry SET parent=?, type=?, name=?, size=0, ctime=?";
-        PreparedStatementCreatorFactory factory = new PreparedStatementCreatorFactory(sql);
+        PreparedStatementCreatorFactory factory = new PreparedStatementCreatorFactory(sql,
+                Types.INTEGER, Types.VARCHAR, Types.VARCHAR, Types.TIMESTAMP);
         factory.setReturnGeneratedKeys(true);
         KeyHolder keyHolder = new GeneratedKeyHolder();
         Object[] params = new Object[] {

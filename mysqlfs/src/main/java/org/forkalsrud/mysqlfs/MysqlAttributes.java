@@ -26,19 +26,24 @@ public class MysqlAttributes implements BasicFileAttributes {
         this.atime = atime;
     }
     
+    
+    private FileTime optional(Date in) {
+        return in != null ? FileTime.fromMillis(in.getTime()) : null;
+    }
+    
     @Override
     public FileTime lastModifiedTime() {
-        return FileTime.fromMillis(mtime.getTime());
+        return mtime != null ? optional(mtime) : optional(ctime);
     }
     
     @Override
     public FileTime lastAccessTime() {
-        return FileTime.fromMillis(atime.getTime());
+        return atime != null ? optional(atime) : optional(ctime);
     }
     
     @Override
     public FileTime creationTime() {
-        return FileTime.fromMillis(ctime.getTime());
+        return optional(ctime);
     }
     
     @Override
