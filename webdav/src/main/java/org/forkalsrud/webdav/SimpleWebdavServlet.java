@@ -46,7 +46,42 @@ public class SimpleWebdavServlet extends AbstractWebdavServlet {
 	public void setResourceFactory(DavResourceFactory resourceFactory) {
 		this.resourceFactory = resourceFactory;
 	}
+    void dumpHeaders(HttpServletRequest request) {
+        System.err.println(request.getMethod() + " " + request.getRequestURI());
+        Enumeration<String> en = request.getHeaderNames();
+        while (en.hasMoreElements()) {
+        
+            String header = en.nextElement();
+            String value = request.getHeader(header);
+        
+            System.err.println(header + ": " + value);
+        }
+        System.err.println();
+    }
 
+    @Override
+    protected void doMkCol(WebdavRequest request, WebdavResponse response,
+            DavResource resource) throws IOException, DavException {
+        dumpHeaders(request);
+        request.setAttribute(request.getMethod(), Boolean.TRUE);
+        super.doMkCol(request, response, resource);
+    }
+    
+    @Override
+    protected InputContext getInputContext(DavServletRequest request, InputStream in) {
+        final InputContext delegate = super.getInputContext(request, in);
+        return (InputContext)Proxy.newProxyInstance(getClass().getClassLoader(),
+                new Class[] { InputContext.class },
+                new InvocationHandler() {
+                    @Override
+                    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                        if ("getProperty".equals(method.getName()) && "METHOD".equals(args[0])) {
+                            return request.getMethod();
+                        }
+                        return method.invoke(delegate, args);
+                    }
+                });
+    }
 
 
 }

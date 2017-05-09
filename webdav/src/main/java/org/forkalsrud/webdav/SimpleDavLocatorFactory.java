@@ -1,6 +1,5 @@
 package org.forkalsrud.webdav;
 
-import java.io.File;
 import java.nio.file.Path;
 
 import org.apache.jackrabbit.webdav.DavLocatorFactory;
@@ -16,9 +15,9 @@ public class SimpleDavLocatorFactory implements DavLocatorFactory {
     private String urlPathPrefix;
     private Path root;
 
-    public SimpleDavLocatorFactory(String urlPrefix, String fileSystemPrefix) {
+    public SimpleDavLocatorFactory(String urlPrefix, Path fileSystemPrefix) {
         this.urlPathPrefix = urlPrefix;
-        this.root = new File(fileSystemPrefix).toPath();
+        this.root = fileSystemPrefix;
     }
 
 

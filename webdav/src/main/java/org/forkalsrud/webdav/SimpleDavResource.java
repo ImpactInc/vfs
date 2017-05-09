@@ -37,7 +37,7 @@ public class SimpleDavResource implements DavResource {
     private LockManager lockManager;
     private DavSession session;
 
-    private Path file;
+    private Path path;
 
     protected DavPropertySet properties = new DavPropertySet();
     protected boolean propsInitialized = false;
@@ -47,15 +47,15 @@ public class SimpleDavResource implements DavResource {
         this.factory = factory;
         this.lockManager = lockManager;
         this.session = session;
-        this.file = locator.getPath();
+        this.path = locator.getPath();
     }
 
-    public SimpleDavResource(SimpleDavResource other, Path file) {
-        this.locator = new SimpleResourceLocator(other.locator, file);
+    public SimpleDavResource(SimpleDavResource other, Path path) {
+        this.locator = new SimpleResourceLocator(other.locator, path);
         this.factory = other.factory;
         this.lockManager = other.lockManager;
         this.session = other.session;
-        this.file = file;
+        this.path = path;
     }
 
     /**
@@ -87,7 +87,7 @@ public class SimpleDavResource implements DavResource {
      */
     @Override
     public boolean exists() {
-        return Files.exists(file);
+        return Files.exists(path);
     }
 
     /**
@@ -97,7 +97,7 @@ public class SimpleDavResource implements DavResource {
      */
     @Override
     public boolean isCollection() {
-        return Files.isDirectory(file);
+        return Files.isDirectory(path);
     }
 
     /**
@@ -107,7 +107,7 @@ public class SimpleDavResource implements DavResource {
      */
     @Override
     public String getDisplayName() {
-        return file.getFileName().toString();
+        return path.getFileName().toString();
     }
 
     /**
@@ -154,7 +154,7 @@ public class SimpleDavResource implements DavResource {
     @Override
     public long getModificationTime() {
         try {
-            return Files.getLastModifiedTime(file).toMillis();
+            return Files.getLastModifiedTime(path).toMillis();
         } catch (IOException e) {
             return 0L;
         }
@@ -172,7 +172,7 @@ public class SimpleDavResource implements DavResource {
     public void spool(OutputContext outputContext) throws IOException {
 
         OutputStream dst = outputContext.getOutputStream();
-        Files.copy(file, dst);
+        Files.copy(path, dst);
         dst.close();
     }
 
@@ -289,7 +289,7 @@ public class SimpleDavResource implements DavResource {
         List<DavResource> list = new ArrayList<DavResource>();
         if (exists() && isCollection()) {
             try {
-                for (Path child : Files.newDirectoryStream(file)) {
+                for (Path child : Files.newDirectoryStream(path)) {
                     list.add(new SimpleDavResource(this, child));
                 }
             } catch (IOException e) {
@@ -320,12 +320,12 @@ public class SimpleDavResource implements DavResource {
             String memberPath = resource.getLocator().getRepositoryPath();
             String memberName = memberPath.substring(memberPath.lastIndexOf('/') + 1);
 
-            Path p = this.file.resolve(memberName);
-            if (resource.isCollection()) {
+            Path p = this.path.resolve(memberName);
+            if ("MKCOL".equalsIgnoreCase(inputContext.getProperty("METHOD"))) {
                 Files.createDirectory(p);
             } else {
                 InputStream src = inputContext.getInputStream();
-                Files.copy(src, p);
+                Files.copy(src, p, StandardCopyOption.REPLACE_EXISTING);
                 src.close();
             }
         } catch (IOException e) {
@@ -352,7 +352,7 @@ public class SimpleDavResource implements DavResource {
             String memberPath = member.getLocator().getRepositoryPath();
             String memberName = memberPath.substring(memberPath.lastIndexOf('/') + 1);
             
-            Path p = file.resolve(memberName);
+            Path p = path.resolve(memberName);
             Files.delete(p);
         } catch (IOException e) {
             throw new DavException(DavServletResponse.SC_INTERNAL_SERVER_ERROR, e);
@@ -368,7 +368,7 @@ public class SimpleDavResource implements DavResource {
     @Override
     public void move(DavResource destination) throws DavException {
         try {
-            Files.move(file, ((SimpleDavResource)destination).file);
+            Files.move(path, ((SimpleDavResource)destination).path);
         } catch (IOException e) {
             throw new DavException(DavServletResponse.SC_INTERNAL_SERVER_ERROR, e);
         }
@@ -384,15 +384,15 @@ public class SimpleDavResource implements DavResource {
     @Override
     public void copy(DavResource destination, boolean shallow) throws DavException {
 
-        final Path destinationFile = ((SimpleDavResource)destination).file;
+        final Path destinationFile = ((SimpleDavResource)destination).path;
         try {
-            if (Files.isDirectory(file)) {
+            if (Files.isDirectory(path)) {
                 Files.createDirectory(destinationFile);
                 if (!shallow) {
-                    final Path srcRoot = file;
+                    final Path srcRoot = path;
                     final Path dstRoot = destinationFile;
     
-                    Files.walkFileTree(file, new FileVisitor<Path>() {
+                    Files.walkFileTree(path, new FileVisitor<Path>() {
                         
                         Path dstFor(Path src) {
                             return dstRoot.resolve(srcRoot.relativize(src));
@@ -422,8 +422,8 @@ public class SimpleDavResource implements DavResource {
                         }
                     });
                 }
-            } else if (Files.isRegularFile(file)) {
-                Files.copy(file, destinationFile);
+            } else if (Files.isRegularFile(path)) {
+                Files.copy(path, destinationFile);
             }
         } catch (IOException e) {
             throw new DavException(DavServletResponse.SC_INTERNAL_SERVER_ERROR, e);
@@ -564,7 +564,7 @@ public class SimpleDavResource implements DavResource {
             return;
         }
     
-        BasicFileAttributeView attrView = Files.getFileAttributeView(file, BasicFileAttributeView.class);
+        BasicFileAttributeView attrView = Files.getFileAttributeView(path, BasicFileAttributeView.class);
         try {
             BasicFileAttributes attrs = attrView.readAttributes();
             properties.add(new DefaultDavProperty<String>(DavPropertyName.DISPLAYNAME, getDisplayName()));
