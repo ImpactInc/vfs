@@ -1,51 +1,30 @@
 package org.forkalsrud.webdav;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.util.Enumeration;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.jackrabbit.webdav.*;
+import org.apache.jackrabbit.webdav.io.InputContext;
+import org.apache.jackrabbit.webdav.io.InputContextImpl;
 import org.apache.jackrabbit.webdav.server.AbstractWebdavServlet;
 
 
 @SuppressWarnings("serial")
 public class SimpleWebdavServlet extends AbstractWebdavServlet {
+    
+    DavSessionProvider sessionProvider;
+    DavLocatorFactory locatorFactory;
+    DavResourceFactory resourceFactory;
+    
 
-	DavSessionProvider sessionProvider;
-	DavLocatorFactory locatorFactory;
-	DavResourceFactory resourceFactory;
-
-
-	@Override
-	protected boolean isPreconditionValid(WebdavRequest request, DavResource resource) {
-		return true;
-	}
-
-	@Override
-	public DavSessionProvider getDavSessionProvider() {
-		return sessionProvider;
-	}
-
-	@Override
-	public void setDavSessionProvider(DavSessionProvider davSessionProvider) {
-		this.sessionProvider = davSessionProvider;
-	}
-
-	@Override
-	public DavLocatorFactory getLocatorFactory() {
-		return locatorFactory;
-	}
-
-	@Override
-	public void setLocatorFactory(DavLocatorFactory locatorFactory) {
-		this.locatorFactory = locatorFactory;
-	}
-
-	@Override
-	public DavResourceFactory getResourceFactory() {
-		return resourceFactory;
-	}
-
-	@Override
-	public void setResourceFactory(DavResourceFactory resourceFactory) {
-		this.resourceFactory = resourceFactory;
-	}
     void dumpHeaders(HttpServletRequest request) {
         System.err.println(request.getMethod() + " " + request.getRequestURI());
         Enumeration<String> en = request.getHeaderNames();
@@ -59,6 +38,17 @@ public class SimpleWebdavServlet extends AbstractWebdavServlet {
         System.err.println();
     }
 
+    /*
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        
+        dumpHeaders(request);
+        super.service(request, response);
+        
+    }
+    */
+    
     @Override
     protected void doMkCol(WebdavRequest request, WebdavResponse response,
             DavResource resource) throws IOException, DavException {
@@ -84,4 +74,41 @@ public class SimpleWebdavServlet extends AbstractWebdavServlet {
     }
 
 
+    @Override
+    protected boolean isPreconditionValid(WebdavRequest request, DavResource resource) {
+        return true;
+    }
+    
+    @Override
+    public DavSessionProvider getDavSessionProvider() {
+        return sessionProvider;
+    }
+    
+    @Override
+    public void setDavSessionProvider(DavSessionProvider davSessionProvider) {
+        this.sessionProvider = davSessionProvider;
+    }
+    
+    @Override
+    public DavLocatorFactory getLocatorFactory() {
+        return locatorFactory;
+    }
+    
+    @Override
+    public void setLocatorFactory(DavLocatorFactory locatorFactory) {
+        this.locatorFactory = locatorFactory;
+    }
+    
+    @Override
+    public DavResourceFactory getResourceFactory() {
+        return resourceFactory;
+    }
+    
+    @Override
+    public void setResourceFactory(DavResourceFactory resourceFactory) {
+        this.resourceFactory = resourceFactory;
+    }
+    
+    
+    
 }
