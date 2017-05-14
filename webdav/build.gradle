@@ -15,6 +15,11 @@ dependencies {
 
     compile project(":mysqlfs")
     compile "org.apache.tomcat:tomcat-jdbc:7.0.62"
+
+    compile 'com.upplication:s3fs:1.5.3'
+
+    compile 'com.github.marschall:zipfilesystem-standalone:1.0.1'
+
     runtime 'mysql:mysql-connector-java:6.0.6'
 
     runtime 'org.slf4j:slf4j-jdk14:1.7.10'

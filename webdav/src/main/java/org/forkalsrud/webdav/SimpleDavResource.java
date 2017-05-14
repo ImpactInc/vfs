@@ -580,10 +580,10 @@ public class SimpleDavResource implements DavResource {
                 properties.add(new DefaultDavProperty<String>(DavPropertyName.ISCOLLECTION, "0"));
             }
             HttpDateFormat fmt = HttpDateFormat.modificationDateFormat();
-            long modified = attrs.lastModifiedTime().toMillis();
+            long modified = attrs.lastModifiedTime() != null ? attrs.lastModifiedTime().toMillis() : 0L;
             String lastModifiedStr = fmt.format(new Date(modified));
             properties.add(new DefaultDavProperty<String>(DavPropertyName.GETLASTMODIFIED, lastModifiedStr));
-            long created = attrs.creationTime().toMillis();
+            long created = attrs.creationTime() != null ? attrs.creationTime().toMillis() : 0L;
             String createdStr = fmt.format(new Date(created));
             properties.add(new DefaultDavProperty<String>(DavPropertyName.CREATIONDATE, createdStr));
 

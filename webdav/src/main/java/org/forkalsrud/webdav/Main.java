@@ -1,13 +1,13 @@
 package org.forkalsrud.webdav;
 
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.URI;
 import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.util.Enumeration;
-import java.util.Properties;
+import java.util.*;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -54,8 +54,10 @@ public class Main {
         SimpleWebdavServlet webdavServlet = new SimpleWebdavServlet();
         SimpleDavSessionProvider sessionProvider = new SimpleDavSessionProvider();
 
-        // String fsRoot = new File(System.getProperty("user.home"), "tmp").getAbsolutePath();
-        Path fsRoot = mount("testroot");
+        // Path fsRoot = mountFile(new File(System.getProperty("user.home"), "tmp").getAbsolutePath());
+        // Path fsRoot = mountMysqlfs("testroot");
+        // Path fsRoot = mountS3("eventrouting-test");
+        Path fsRoot = mountZip(new File(System.getProperty("user.home"), "demo.zip").getAbsolutePath());
 
 
         SimpleDavLocatorFactory simpleLocatorFactory = new SimpleDavLocatorFactory("/webdav", fsRoot);
@@ -96,11 +98,37 @@ public class Main {
         });
 
         server.start();
+    
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        String cmd;
+        outer:
+        while ((cmd = in.readLine()) != null) {
+            switch (cmd) {
+                case "quit":
+                    break outer;
+                default:
+                    System.out.println("Not understood: " + cmd);
+            }
+        }
+        System.out.println("shutting down");
+        server.stop();
         server.join();
+        System.out.println("unmounting file system");
+        fsRoot.getFileSystem().close();
+        System.out.println("halt");
+    }
+    
+    
+    static Path mountFile(String rootPath) throws IOException {
+        return new File(rootPath).toPath();
+    }
+    
+    static Path mountZip(String zipPath) throws IOException {
+        return single(FileSystems.newFileSystem(URI.create("jar:file:" + zipPath + "!/"), Collections.emptyMap()).getRootDirectories());
     }
 
 
-    static Path mount(String rootName) throws IOException {
+    static Path mountMysqlfs(String rootName) throws IOException {
         DataSource pool = new DataSource();
         pool.setDriverClassName("com.mysql.cj.jdbc.Driver");
         pool.setUrl("jdbc:mysql://localhost/mysqlfs");
@@ -116,6 +144,24 @@ public class Main {
     
         FileSystem fs = provider.newFileSystem(URI.create("mysqlfs:" + rootName + "/"), null);
         return single(fs.getRootDirectories());
+    }
+
+    static Path mountS3(String bucketName) throws IOException {
+        Properties props = new Properties();
+        Reader r = new FileReader(new File(System.getProperty("user.home"), ".s3fs"));
+        props.load(r);
+        r.close();
+        HashMap<String, Object> env = new HashMap<>();
+        for (Map.Entry<Object, Object> e : props.entrySet()) {
+            env.put(String.valueOf(e.getKey()), e.getValue());
+        }
+        FileSystem fs = FileSystems.newFileSystem(URI.create("s3:///"), env);
+        for (Path p : fs.getRootDirectories()) {
+            if (bucketName.equals(p.getFileName().toString())) {
+                return p;
+            }
+        }
+        throw new NoSuchFileException(bucketName);
     }
 
 
