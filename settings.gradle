@@ -1,1 +1,3 @@
 include 'mysqlfs', 'webdav'
+include 'ftpd'
+

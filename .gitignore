@@ -7,3 +7,6 @@
 /out
 /mysqlfs/build
 /webdav/build
+/ftpd/build
+/classes
+
