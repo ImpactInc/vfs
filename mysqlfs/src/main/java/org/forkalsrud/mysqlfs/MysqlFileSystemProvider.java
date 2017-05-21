@@ -18,6 +18,7 @@
  */
 package org.forkalsrud.mysqlfs;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -348,7 +349,11 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
         }
         long id = resolve(path);
         if (id == 0L) {
-            id = create(path, "file");
+            if (options.contains(StandardOpenOption.CREATE) || options.contains(StandardOpenOption.CREATE_NEW)) {
+                id = create(path, "file");
+            } else {
+                throw new NoSuchFileException(path.toString());
+            }
         }
         final long resolvedId = id;
         return new LocalCopySeekableByteChannel(id, new LocalCopySeekableByteChannel.Sync() {
@@ -382,11 +387,22 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
         if (id > 0L) {
             delete(id);
         }
+        // Update parent's mtime
+        Path parent = path.getParent();
+        long parentId = resolve(parent);
+        if (parentId > 0) {
+            tmpl.update("UPDATE direntry SET mtime = ? WHERE id = ?", new Date(), parentId);
+        }
     }
     
     void delete(long id) throws IOException {
         if ("file".equals(typeOf(id))) {
-            truncate(id);
+            tmpl.update("DELETE FROM blocks WHERE dir = ?", id);
+        } else {
+            Integer childCount = tmpl.queryForObject("SELECT count(1) FROM direntry WHERE parent = ?", Integer.class, id);
+            if (childCount > 0) {
+                throw new IOException("Directory not empty");
+            }
         }
         tmpl.update("DELETE FROM direntry WHERE id = ?", id);
     }
@@ -468,6 +484,8 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
         if (sourceId == 0L) {
             throw new IOException("Path does not exist: " + source);
         }
+        Path oldParent = source.getParent();
+        long oldParentId = resolve(oldParent);
         Path newParent = target.getParent();
         long newParentId = resolve(newParent);
         if (newParentId == 0L) {
@@ -492,6 +510,10 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
             delete(targetId);
         }
         tmpl.update("UPDATE direntry SET parent = ?, name = ? WHERE id = ?", newParentId, target.getFileName().toString(), sourceId);
+    
+        // Update both old and new parent's mtime
+        tmpl.update("UPDATE direntry SET mtime = ? WHERE id = ?", new Date(), oldParentId);
+        tmpl.update("UPDATE direntry SET mtime = ? WHERE id = ?", new Date(), newParentId);
     }
 
     @Override
@@ -628,7 +650,10 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
                 new Date()
         };
         tmpl.update(factory.newPreparedStatementCreator(params), keyHolder);
-        return keyHolder.getKey().longValue();
+        long newId = keyHolder.getKey().longValue();
+        // Update parent's mtime
+        tmpl.update("UPDATE direntry SET mtime = ? WHERE id = ?", new Date(), parentId);
+        return newId;
     }
 
     <T> T queryFor(Class<T> clazz, String sql, Object... args) {
