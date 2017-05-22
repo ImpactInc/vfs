@@ -31,6 +31,9 @@
 
 package com.theorem.ftp;
 
+import java.nio.file.Path;
+
+
 public interface FileReceipt {
     
     /**
@@ -41,24 +44,20 @@ public interface FileReceipt {
      * <BR><CODE> 553 Requested action not taken.</CODE>
      * <P>
      * @param entity Name of the entity downloading the file.
-     * @param fileName Physical path of the file retrieved by the FTP server.
-     * @param configDir Configuration directory as supplied on the FTP server command line.
-     * @param log LogMsg object for logging.
+     * @param path Physical path of the file retrieved by the FTP server.
      *
      * @return Status string, or null if the file may be downloaded.
      */
-    String getBefore(String entity, String fileName, String configDir, LogMsg log);
+    String getBefore(String entity, Path path);
     
     /**
      * Method called when a file is retrieved from the FTP server.
      * <P>
      * @param entity Name of the entity downloading the file.
-     * @param fileName Physical path of the file retrieved by the FTP server.
+     * @param path Physical path of the file retrieved by the FTP server.
      * @param byteCount Number of bytes downloaded.
-     * @param configDir Configuration directory as supplied on the FTP server command line.
-     * @param log LogMsg object for logging.
      */
-    void getAfter(String entity, String fileName, long byteCount, String configDir, LogMsg log);
+    void getAfter(String entity, Path path, long byteCount);
     
     /**
      * Method called just before a file is stored by the FTP server.
@@ -68,33 +67,27 @@ public interface FileReceipt {
      * <BR><CODE> 553 Requested action not taken.</CODE>
      * <P>
      * @param entity Name of the entity uploading the file.
-     * @param fileName Physical path of the file stored by the FTP server.
-     * @param configDir Configuration directory as supplied on the FTP server command line.
-     * @param log Log object for creating log entries, if necessary.  This writes to the main server log.
+     * @param path Physical path of the file stored by the FTP server.
      *
      * @return Status string, or null if the file may be downloaded.
      */
-    String putBefore(String entity, String fileName, String configDir, LogMsg log);
+    String putBefore(String entity, Path path);
     
     /**
      * Method called when a file is stored by the FTP server.
      *
      * @param entity Name of the entity uploading the file.
-     * @param fileName Physical path of the file stored by the FTP server.
+     * @param path Physical path of the file stored by the FTP server.
      * @param byteCount Number of bytes uploaded.
-     * @param configDir Configuration directory as supplied on the FTP server command line.
-     * @param log Log object for creating log entries, if necessary.  This writes to the main server log.
      */
-    void putAfter(String entity, String fileName, long byteCount, String configDir, LogMsg log);
+    void putAfter(String entity, Path path, long byteCount);
     
     /**
      * Method called when a directory is entered.
      *
      * @param entity Name of the entity uploading the file.
-     * @param physDirName Physical path of the directory.
+     * @param path Physical path of the directory.
      * @param virtDirName Virtual path of the directory.
-     * @param configDir Configuration directory as supplied on the FTP server command line.
-     * @param log Log object for creating log entries, if necessary.  This writes to the main server log.
      *
      * @return Status string, or null if the directory may be entered.
      * This will be something like "450 Requested file action not taken." which will prevent
@@ -102,8 +95,6 @@ public interface FileReceipt {
      */
     String enterDirectory(
             String entity,
-            String physDirName,
-            String virtDirName,
-            String configDir,
-            LogMsg log);
+            Path path,
+            String virtDirName);
 }

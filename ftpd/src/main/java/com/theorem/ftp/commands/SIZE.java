@@ -1,15 +1,17 @@
 package com.theorem.ftp.commands;
 
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import com.theorem.ftp.CurrentInfo;
-import com.theorem.ftp.FCorrectPath;
 import com.theorem.ftp.Global;
 
 
 public class SIZE {
     
     public SIZE(CurrentInfo curCon, String str) {
+
         Global global = curCon.global;
         
         // Get the file path:
@@ -21,23 +23,14 @@ public class SIZE {
             global.log.logMsg("SIZE: No permission to read " + str);
             return;
         }
-        
-        String sizeFileName;
-        
-        if (curCon.curFile == null) {
+    
+        try {
+            Path sizeFile = curCon.virtToPhys(str);
+            long size = Files.size(sizeFile);
+            curCon.respond("213 " + size);
+        } catch (IOException e) {
             curCon.respond("553 Requested action not taken.");
-            global.log.logMsg("SIZE: The file does not exist " + curCon.curVDir + curCon.curFile);
-            return;
+            global.log.logMsg("SIZE: Failed because " + str + " isn't a file");
         }
-        
-        sizeFileName = new FCorrectPath().fixit(curCon.curPDir + curCon.curFile);
-        
-        File fSize = new File(sizeFileName);
-        if (!fSize.isFile()) {
-            curCon.respond("553 Requested action not taken.");
-            global.log.logMsg("SIZE: Failed because " + curCon.curVDir + curCon.curFile + " isn't a file");
-            return;
-        }
-        curCon.respond("213 " + fSize.length());
     }
 }

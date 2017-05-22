@@ -57,6 +57,7 @@ public class FtpSession implements Runnable {
      * Run the Session thread.
      */
     public void run() {
+
         CurrentInfo curCon = new CurrentInfo(global);        // current connection information.
         boolean loggedIn = false;                            // assume the newcomer isn't logged in yet.
         
@@ -117,14 +118,14 @@ public class FtpSession implements Runnable {
                 try {
                     _incoming.close();
                 } catch (IOException ioek) {
-                    ;
+                    // ignore
                 }
                 Clients.releaseConnection(curCon.entity);
                 break;
             }
     
-            if (str == null)    // Quit on null commands (EOF)
-            {
+            // Quit on null commands (EOF)
+            if (str == null) {
                 break;
             }
             

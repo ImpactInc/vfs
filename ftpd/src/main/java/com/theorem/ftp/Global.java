@@ -1,5 +1,6 @@
 package com.theorem.ftp;
 
+import java.nio.file.Path;
 import java.util.Hashtable;
 
 // Global objects all sessions need to access.
@@ -37,7 +38,7 @@ public class Global implements Cloneable {
     
     String osName;        // name of the OS (for system dependent info)
     
-    public String welcomeFile;    // An announcement file to be printed at each session.
+    Path welcomeFile;    // An announcement file to be printed at each session.
     String displayFile;    // file to be displayed on a CWD/CDUP
     
     // Alternatives to RADIUS authentication:
@@ -46,6 +47,7 @@ public class Global implements Cloneable {
     
     // Hook for tracking uploads and downloads.
     public String fileClass;        // Class to be called when a file is uploaded or downloaded.
+    FileReceipt fileListener = null;
     
     // Log the commands or not.  Passwords will be logged!
     boolean logCommands;
@@ -77,5 +79,13 @@ public class Global implements Cloneable {
 
     public String getServerIdentification() {
         return serverIdentification;
+    }
+
+    public FileReceipt getFileListener() {
+        return fileListener;
+    }
+
+    public Path getWelcomeFile() {
+        return welcomeFile;
     }
 }

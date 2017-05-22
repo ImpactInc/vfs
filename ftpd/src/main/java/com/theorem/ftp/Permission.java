@@ -1,6 +1,8 @@
 package com.theorem.ftp;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
@@ -23,57 +25,6 @@ public class Permission {
         this.global = global;
     }
     
-    /**
-     * Check read permission on a directory
-     *
-     * @param entity Entity name.
-     * @param vDir   Virtual directory.
-     * @return true if the entiry has read permission in the  virtual directory.
-     */
-    boolean canRead(String entity, String vDir) throws SecurityException {
-        // get the longest match for the virtual directory.
-        String vDirRoot;
-        
-        //global.log.logMsg("perms.canread; vdir = <" + vDir + ">");
-        if ((vDirRoot = longestVirtDir(vDir)) == null) {
-            //global.log.logMsg("perms.canRead: vDirRoot is null");
-            return false;    // no matching virtual directory.
-        }
-        
-        //global.log.logMsg("canRead: Checking on virt root dir " + vDirRoot + " from " + vDir);
-        if (physDirExists(vDirRoot, vDir) == false) {
-            //global.log.logMsg("perms.canRead: physDirExists failed for " + virtToPhys(vDir));
-            return false;
-        }
-        
-        return checkPerms(vDirRoot, entity, "r");
-    }
-    
-    /**
-     * Check write permission on a directory
-     *
-     * @param entity Entity name.
-     * @param vDir   Virtual directory.
-     * @return true if the entiry has write permission in the  virtual directory.
-     */
-    boolean canWrite(String entity, String vDir) throws SecurityException {
-        // Life would be so much easier using the java.security.Permission class.
-        // but this won't run on pre Java 2 systems.
-        
-        // get the longest match for the virtual directory.
-        String vDirRoot;
-        if ((vDirRoot = longestVirtDir(vDir)) == null) {
-            //global.log.logMsg("canWrite: can't find longest virtual directory");
-            return false;    // no matching virtual directory.
-        }
-        
-        if (physDirExists(vDirRoot, vDir) == false) {
-            //global.log.logMsg(("canWrite: pysical directory " + vDir + " doesn't exist");
-            return false;
-        }
-        
-        return checkPerms(vDirRoot, entity, "w");
-    }
     
     /**
      * Return the virtual home directory
@@ -251,44 +202,6 @@ public class Permission {
         return result;
     }
     
-    /**
-     * Return true if the physical directory exists.
-     *
-     * @param vDir Virtual directory.
-     * @param path physical path to check
-     * @return true if the physical directory exists.
-     */
-    boolean physDirExists(String vDir, String path) {
-        
-        String physDir = _permTable.get(vDir).physDir;
-        //global.log.logMsg("physDirExists: args: [" + vDir + "][" + path + "]");
-        //global.log.logMsg("physDirExists: physDir: [" + physDir + "]");
-        if (physDir == null) {
-            //global.log.logMsg("physDirExists: Dir: " + vDir + " isn't in the virtual table.");
-            return false;
-        }
-        
-        String rpath;
-        if (vDir.equals("/")) {
-            rpath = path.substring(vDir.length() - 1);
-        } else {
-            rpath = path.substring(vDir.length());
-        }
-        
-        //global.log.logMsg("physDirExists: rpath: [" + rpath + "]");
-        //global.log.logMsg("physDirExists: Dir: [" + physDir + "][" + rpath + "]");
-        //global.log.logMsg("physDirExists: Dir: " + physDir + rpath);
-        
-        physDir = physDir + resolve(rpath);
-        //global.log.logMsg("physDirExists: physdir after resolve: " + physDir);
-        
-        
-        String physPath = new FCorrectPath().fixit(physDir);
-        File f = new File(physPath);
-        
-        //global.log.logMsg("physDirExists: testing directory: " + physPath + " result is " + (f.exists() && f.isDirectory()));
-        return f.exists() && f.isDirectory();
-    }
     
     
     /**

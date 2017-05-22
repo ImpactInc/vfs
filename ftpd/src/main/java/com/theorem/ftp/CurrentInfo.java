@@ -1,10 +1,17 @@
 package com.theorem.ftp;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Stack;
 import java.util.Vector;
+import java.util.stream.Collectors;
 
 import com.theorem.ftp.util.Text;
 
@@ -46,19 +53,27 @@ public class CurrentInfo {
     
     public char transferType = ATYPE;    // Type of transfer, Ascii  (ATYPE) or Image (ITYPE).
     
+    /*
+    */
     // These are side effects based on what's currently being constructed as a directory and / or file.
     public String curWD;        // current Virtual Working Dirctory
     public String curPDir;    // current physical root directory
     public String curVDir;    // current virtual root directory
     public String curFile;    // side effect of getDir();
-    
+
+    private Path root;
+    private Path cwd;
+
+
+
     public Global global;    // Convience copy of global data - every function/class should use this copy.
     
     private Permission _perms;    // Permission info
     
 
-    private String renameFile; // The rename is two commands, the file to rename has to be remembered on the session
+    private Path renameFile;  // The rename is two commands, the file to rename has to be remembered on the session
     
+    public final byte[] eol;
     
     /**
      * Constructor to assign the global information to this class.
@@ -67,10 +82,11 @@ public class CurrentInfo {
      */
     CurrentInfo(Global global) {
         this.global = global;
+        eol = System.getProperty("line.separator").getBytes();
     }
     
     /**
-     * Set up the login information.
+     * Set up the login information after the user is authenticated.
      *
      * @param name  Entity name.
      * @param perms Permission class.
@@ -78,14 +94,8 @@ public class CurrentInfo {
     public void setLogin(String name, Permission perms) {
         entity = name;
         _perms = perms;
-        curVDir = _perms.getHomeDir();
-        //global.log.logMsg("CurrentInfo.init: Current curVdir is " + curVDir);
-        curPDir = virtToPhys(curVDir);
-        //global.log.logMsg("CurrentInfo.init: Current curPdir is " + curPDir);
-        curFile = null;
-        curWD = curVDir;
-        //global.log.logMsg("CurrentInfo.init: working dir curWD " + curWD);]
-        
+        root = global.authenticator.getDirectory(name);
+        cwd = root;
     }
     
     /**
@@ -94,40 +104,25 @@ public class CurrentInfo {
      * @param path Virtual directory path.
      * @return the physical directory path.
      */
-    public String virtToPhys(String path) {
+    public Path virtToPhys(String path) throws IOException {
         
+        return root.resolve(createAbsolutePath(path));
+        /*
         path = createAbsolutePath(path);
         //global.log.logMsg("CurrentInfo.virtToPhys returns: " + _perms.virtToPhys(path));
         return _perms.virtToPhys(path);
+        */
     }
     
-    /**
-     * Change directory.
-     * When changing directory only the curWD and curVDir are setup.
-     * Physical dir and file name are not set.
-     *
-     * @param newDir target directory.
-     * @return true if the change was succesfull.
-     */
-    public boolean chdir(String newDir) {
-        
-        String curdir;    // new current virtual directory.
-        
-        newDir = createAbsolutePath(newDir);
-        
-        //global.log.logMsg("curCon.chdir: Trying to chdir to " + newDir);
-        
-        if (_perms.canRead(entity, newDir)) {
-            curWD = _perms.resolve(newDir);
-            curVDir = curWD;    // side effect.
-            //global.log.logMsg("curCon.chdir: set curWD to " + curWD);
-            return true;
-        }
-        
-        //global.log.logMsg("curCon.chdir: failed");
-        return false;
+    
+    public Path getCwd() {
+        return cwd;
     }
     
+    public Path getRoot() {
+        return root;
+    }
+
     /**
      * check for read permision on directory for a file path
      * curVDir, curPDir, and curFile are set up.
@@ -136,6 +131,9 @@ public class CurrentInfo {
      * @return true if read permission is granted.
      */
     public boolean canReadFile(String filePath) {
+
+        return true;
+        /*
         //global.log.logMsg("CurrentInfo.canRead: before creatAbspath = <" + filePath + ">");
         
         filePath = createAbsolutePath(filePath);
@@ -151,8 +149,10 @@ public class CurrentInfo {
         setDir(filePath);
         
         return true;
+        */
     }
     
+
     /**
      * Check for write permission on directory for a file path.
      *
@@ -160,7 +160,8 @@ public class CurrentInfo {
      * @return true if able to write to directory.
      */
     public boolean canWriteDir(String dirPath) {
-        
+
+        /*
         dirPath = createAbsolutePath(dirPath);
         //global.log.logMsg("canWriteDir: trying to write to " + dirPath);
     
@@ -169,6 +170,7 @@ public class CurrentInfo {
         }
         
         setDir(dirPath);
+        */
         return true;
     }
     
@@ -179,6 +181,8 @@ public class CurrentInfo {
      * @return true if the file can be written.
      */
     public boolean canWriteFile(String filePath) {
+
+        /*
         filePath = createAbsolutePath(filePath);
         
         String pathV = getDir(filePath);
@@ -189,21 +193,10 @@ public class CurrentInfo {
         }
         
         setDir(filePath);
+        */
         return true;
     }
     
-    
-    /**
-     * Set up the internal information to match a successful
-     * path. (that is to say, this should only be called upon
-     * successful testing of a path)
-     *
-     * @param vPath Virtual path
-     */
-    void setDir(String vPath) {
-        curVDir = getDir(vPath);
-        curPDir = virtToPhys(curVDir);
-    }
     
     /**
      * Extract a virtual directory from a file path.
@@ -213,7 +206,10 @@ public class CurrentInfo {
      * @param filePath path to a file.
      * @return virtual directory path to file.
      */
-    public String getDir(String filePath) {
+    public String getDir(Path filePath) {
+    
+        return root.relativize(filePath).toString();
+    /*
         String pathV = null;    // full virtual path of file's directory.
         int sep;
         //global.log.logMsg("getDir: filepath arrived as: " + filePath);
@@ -231,54 +227,51 @@ public class CurrentInfo {
         }
         
         return pathV;
+      */
     }
     
     /**
-     * Create an absolute virtual path.
-     * The incoming path may be
-     * relative or absolute.  This doesn't resolve any ".."'s
+     * Create an absolute virtual path. The incoming path may be relative or absolute.
+     * This also resolves any ".."'s, but not past the root directory.
      * The path, if not absolute, is made from the CurWD (current working directory).
      *
      * @param path some path form.
      * @return absolute path.
      */
-    public String createAbsolutePath(String path) {
-        //global.log.logMsg("createAbsolutePath: inbound is " + path + " If it starts with / it stays itself, otherwise " + curWD + "/" + path);
-    
+    public String createAbsolutePath(String path) throws IOException {
+        
         if (path == null || path.length() == 0) {
             return "/";    // Sometimes this inanity comes from web browsers.
         }
         
-        // The notion of absolute path and the root path is a bit tricky.
-        // This code makes sure we don't end up with "//xyz" when curWD is "/".
-        
-        // Fix the incoming path. Some systems (DreamWeaver) send double slashes.
-        // Perform this fix until there are no double slashes (there could be mulitple
-        // slashes).
-        while (path.indexOf("//") >= 0) {
-            path = Text.replace(path, "//", "/");
+        // Take CWD into account
+        if (!path.startsWith("/")) {
+            path = root.relativize(cwd).toString() + "/" + path;
         }
-    
-        if (path.equals("."))    // simple - CWD.
-        {
-            return curWD;
+        ArrayList<String> stack = new ArrayList<>();
+        for (String p : Arrays.asList(path.split("/"))) {
+        
+            if ("".equals(p)) {
+                continue;
+            }
+            if ("~".equals(p)) {
+                // We don't distinguish between home dire and root dir
+                stack.clear();
+                continue;
+            }
+            if (".".equals(p)) {
+                continue;
+            }
+            if ("..".equals(p)) {
+                if (!stack.isEmpty()) {
+                    // pop
+                    stack.remove(stack.size() - 1);
+                }
+                continue;
+            }
+            stack.add(p);
         }
-        
-        // It's possible for a path to start with /~ from web browsers and
-        // ftp requests.  Assume this means ~.  Sometimes they use /~/ too. That's ok.
-        if (path.startsWith("/~")) {
-            path = path.substring(1);
-        }
-        
-        char startChar = path.charAt(0);
-    
-        if (startChar != '/') {
-            return (curWD.equals("/")) ? curWD + path : curWD + "/" + path;
-        }
-        
-        //global.log.logMsg("createAbsolutePath: returning " + path);
-        
-        return path;
+        return stack.stream().collect(Collectors.joining("/"));
     }
     
     /**
@@ -314,12 +307,21 @@ public class CurrentInfo {
     }
 
 
-    public void setRenameFile(String file) {
+    public void setRenameFile(Path file) {
         this.renameFile = file;
     }
     
-    public String getRenameFile() {
+    public Path getRenameFile() {
         return renameFile;
+    }
+
+
+    public void setRoot(Path root) {
+        this.root = root;
+    }
+    
+    public void setCwd(Path cwd) {
+        this.cwd = cwd;
     }
 
 }

@@ -5,6 +5,9 @@ import java.io.RandomAccessFile;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.theorem.ftp.util.Text;
 
 
@@ -86,15 +89,8 @@ import com.theorem.ftp.util.Text;
 //
 public class LogFTP {
     
-    private static final String DEFAULTLOG = "trans.log";    // default log file
-    private String logFile;
-    
-    public LogFTP(String logfile) {
-        logFile = logfile;
-    }
-    
-    // open the file for each new message.
-    //
+    static Logger log = LoggerFactory.getLogger("xfer");
+
     public synchronized void logMsg(Global global, CurrentInfo curCon, long startTime, long size, String direction) {
         int i;
         
@@ -134,16 +130,6 @@ public class LogFTP {
             ds.append(curCon.authName);
         }
         
-        try {
-            RandomAccessFile outf = new RandomAccessFile(logFile, "rw");
-            outf.seek(outf.length());    // seek to end of file
-            outf.writeBytes(ds.toString() + "\r\n");
-            try {
-                outf.close();
-            } catch (IOException e) {
-            }
-        } catch (IOException e) {
-            System.out.println(ds);
-        }
+        log.info(ds.toString());
     }
 }

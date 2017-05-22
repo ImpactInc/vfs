@@ -23,7 +23,11 @@ package com.theorem.ftp;
 
 import java.io.*;
 import java.net.*;
+import java.nio.file.Path;
 import java.util.*;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.theorem.ftp.commands.*;
 
@@ -32,7 +36,7 @@ import com.theorem.ftp.commands.*;
  * FTP Server.
  */
 public class Ftpd implements Runnable {
-    
+
     /**
      * Copyright {@value}.
      */
@@ -42,42 +46,17 @@ public class Ftpd implements Runnable {
 
     ThreadGroup ftpSesGroup = new ThreadGroup("FTP Session");
     
-    private Authenticator authenticator;
-    
-    public void setAuthenticator(Authenticator authenticator) {
-        this.authenticator = authenticator;
-    }
-    
     
     /**
-     * Initialize from config files
-     *
-     * @param configDir
+     * Initialize from config
      */
-    public void initialize(String configDir) {
+    public void initialize() {
     
-        // Two thread groups.  One runs the sessions (ftpSesGroup)
-        // The other waits to see if the config files change.  If so
-        // it will call the ftp class with a special constructor (to re-read
-        // the config files.  The intersting part about the FtpConfig proc
-        // is that it will briefly suspend everyone until a new configuration
-        // has been read.
-        FtpConfig ftpcfg = new FtpConfig(ftpSesGroup, configDir);
-    
-        ThreadGroup FtpConfigGroup = new ThreadGroup("FTP Reconfigure");
-
-        Thread FtpConfigT = new Thread(FtpConfigGroup, ftpcfg, "Configuration");
+        FtpConfig ftpcfg = new FtpConfig();
     
         // local copy for main() for printing messages.
         global = ftpcfg.getGlobal();
     
-        FtpConfigT.start();
-    
-        ftpcfg.checkDir();
-        
-        if (authenticator != null) {
-            global.setAuthenticator(authenticator);
-        }
         global.setServerIdentification(copyMsg);
     }
     
@@ -87,14 +66,8 @@ public class Ftpd implements Runnable {
      */
     @Override
     public void run() {
-    
-        String startMsg = copyMsg + " Running on " + global.osName;
-        global.log.logMsg("");
-        global.log.logMsg(startMsg);
-        global.log.logMsg(copyMsg);
-        global.log.logMsg("");
-    
-        System.out.println(startMsg);
+        
+        global.log.logMsg(copyMsg + " Running on " + System.getProperty("os.name"));
     
         int loginCounter = 1;
     
@@ -116,7 +89,7 @@ public class Ftpd implements Runnable {
                 loginCounter++;
             }
         } catch (IOException e) {
-            // Don't care.
+            global.log.logMsg(e.getMessage());
         }
     }
     
@@ -130,16 +103,25 @@ public class Ftpd implements Runnable {
      */
     public static void main(String[] args) {
     
-        String configDir;
-        if (args.length == 0) {
-            configDir = ".";    // default directory.
-        } else {
-            configDir = args[0];
-        }
-
         Ftpd instance = new Ftpd();
 
-        instance.initialize(configDir);
+        instance.initialize();
+    
+        instance.global.FTPPort = 12121;
+
+        instance.global.setAuthenticator(new Authenticator() {
+    
+            @Override
+            public boolean authenticate(String name, String password) {
+                return true;
+            }
+    
+            @Override
+            public Path getDirectory(String name) {
+                return new File(".").toPath();
+            }
+        });
+        
         instance.run();
     }
     

@@ -28,6 +28,9 @@
 
 package com.theorem.ftp;
 
+import java.nio.file.Path;
+
+
 public interface Authenticator {
     
     /**
@@ -35,12 +38,11 @@ public interface Authenticator {
      *
      * @param name      Entity name.
      * @param password  Entity password.
-     * @param configDir Configuration directory for the FTP server.
-     * @param log       Log object.  Usage: log.logMsg(String msg).
-     *                  The server prepends the thread name to the message to track sessions.
-     *                  You can do this by <kbd>log.logMsg(Thread.currentThread().getName() + msg);</kbd>
      * @return true if the entity exists and uses the given password, false otherwise.
      */
-    boolean authenticate(String name, String password, String configDir, LogMsg log);
+    boolean authenticate(String name, String password);
+
+
+    Path getDirectory(String name);
     
 }

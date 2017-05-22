@@ -23,57 +23,23 @@
 
 package com.theorem.ftp;
 
-import java.io.*;
-import java.util.*;
-import java.text.SimpleDateFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 // Log a message to an error log file.
 //
-public class LogMsg
-{
-	private static final String DEFAULTLOG = "./error.log";	// default log file
-	private String logFile;
-	private SimpleDateFormat sdf;
-
-	public LogMsg(String logfile)	// Constructor
-	{
-		logFile = logfile;
-		sdf = new SimpleDateFormat("yyyyMMddHHmmss");
-	}
-
-	public LogMsg()	// Constructor
-	{
-        this(DEFAULTLOG);
-	}
-
-	// Clear the log file by deleting it.
-	//
-	public void clear()
-	{
-		File f = new File(logFile);
-		if (f.exists() && f.isFile())
-			f.delete();
-	}
-
-	// Methods:
-
-	// open the file for each new message.
-	//
-	public synchronized void logMsg(String msg)
-	{
-		String fullMsg;
-
-		fullMsg = sdf.format(new Date()) + " " + Thread.currentThread().getName() + ": " + msg;
-
-		try {
-			RandomAccessFile outf = new RandomAccessFile(logFile, "rw");
-			outf.seek(outf.length());	// seek to end of file
-			outf.writeBytes(fullMsg + "\r\n");
-			try { outf.close(); } catch (IOException e) {}
-		} catch (IOException e) {
-			System.out.println(fullMsg);
-		}
-	}
-
+public class LogMsg {
+    
+    static Logger log = LoggerFactory.getLogger("ftpd");
+    
+    public LogMsg() {
+        // noop
+    }
+    
+    public synchronized void logMsg(String msg) {
+        log.info(msg);
+    }
+    
 }
 

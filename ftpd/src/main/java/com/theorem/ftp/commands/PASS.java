@@ -1,10 +1,13 @@
 package com.theorem.ftp.commands;
 
-import java.io.File;
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-import com.theorem.ftp.*;
+import com.theorem.ftp.CurrentInfo;
+import com.theorem.ftp.DataSocket;
+import com.theorem.ftp.Global;
 
 
 public class PASS {
@@ -30,35 +33,18 @@ public class PASS {
         
         String note;
         
-        if (curCon.entity.equals("anonymous")) {
-            if (password.indexOf(global.AllUsers) == -1) {
-                curCon.respond("530 Not logged in. Please use your email address as your password.");
-                curCon.entity = null;
-                return;
-            }
-            note = "/" + password + " Logged in from " + curCon.remoteSite;
-            global.log.logMsg(note);
-            curCon.authName = null;    // this has not been authorized, kill authorization name.
-        } else {
-            if (checkPassword(curCon, password) == false) {
-                curCon.respond("530 Not logged in.");
-                curCon.entity = null;
-                curCon.authName = null;    // this has not been authorized, kill it.
-                
-                return;
-            }
-            // The name may be a RADIUS proxy name, eg bob@xyz.com
-            // If there's a '@' then remove it and everything beyond.
-            int idx;
-            if ((idx = curCon.entity.indexOf(global.AllUsersC)) > -1) {
-                curCon.entity = curCon.entity.substring(0, idx);
-            }
-            
-            note = " Logged in from " + curCon.remoteSite;
-            global.log.logMsg(note);
+        if (checkPassword(curCon, password) == false) {
+            curCon.respond("530 Not logged in.");
+            curCon.entity = null;
+            curCon.authName = null;    // this has not been authorized, kill it.
+            return;
         }
+
+        note = " Logged in from " + curCon.remoteSite;
+        global.log.logMsg(note);
+
+        // setLogin also sets home directory/ CWD
         curCon.setLogin(curCon.entity, global.permSet);
-        new HomeDirectory(global, curCon).setup();
         
         sendWelcome(curCon);
         curCon.respond("230 User " + curCon.entity + " logged in from " + curCon.remoteIP.getHostName());
@@ -77,7 +63,7 @@ public class PASS {
 
         Global global = curCon.global;
         
-        return global.getAuthenticator().authenticate(curCon.entity, password, global.configDir, global.log);
+        return global.getAuthenticator().authenticate(curCon.entity, password);
     }
     
     // Send the welcome message.
@@ -85,27 +71,23 @@ public class PASS {
     void sendWelcome(CurrentInfo curCon) {
         Global global = curCon.global;
     
-        if (global.welcomeFile == null) {
+        if (global.getWelcomeFile() == null) {
             return;
         }
         
-        File df = new File(global.welcomeFile);
-        if (df.exists() && df.isFile()) {
-            RandomAccessFile fi;
-            try {
-                fi = new RandomAccessFile(df, "r");
-                
-                String line;
-                while ((line = fi.readLine()) != null) {
-                    line.replace('\n', ' ').replace('\r', ' ');
-                    curCon.respond("230- " + line);
-                }
-                fi.close();
-                // It is possible that the return will happen before
-                // the file is closed.  We should do something about this someday.
-            } catch (IOException ioe) {
-                return;
+        Path df = global.getWelcomeFile();
+        if (!Files.isRegularFile(df)) {
+            return;
+        }
+        try {
+            BufferedReader in = Files.newBufferedReader(df);
+            String line;
+            while ((line = in.readLine()) != null) {
+                curCon.respond("230- " + line);
             }
+            in.close();
+        } catch (IOException ioe) {
+            global.log.logMsg(ioe.getMessage());
         }
     }
     

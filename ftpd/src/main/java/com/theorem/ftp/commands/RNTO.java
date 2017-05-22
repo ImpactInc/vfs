@@ -1,9 +1,10 @@
 package com.theorem.ftp.commands;
 
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import com.theorem.ftp.CurrentInfo;
-import com.theorem.ftp.FCorrectPath;
 import com.theorem.ftp.Global;
 
 
@@ -23,18 +24,16 @@ public class RNTO {
         }
         
         // RNFR got the file to rename (from) and stored it in curCon
-        String renameFile = curCon.getRenameFile();
-
-        String tmp = new FCorrectPath().fixit(curCon.curPDir + curCon.curFile);
-        File rntoFile = new File(tmp);
-        File rnfrFile = new File(renameFile);
-        
-        if (rnfrFile.renameTo(rntoFile)) {
-            global.log.logMsg("Renamed file " + renameFile + " to " + tmp);
+        Path renameFile = curCon.getRenameFile();
+        try {
+            Path renameTo = curCon.virtToPhys(str);
+    
+            Files.move(renameFile, renameTo);
             curCon.respond("250 RNTO completed.");
-        } else {
-            global.log.logMsg("RNTO: Rename failed for " + renameFile + " -> " + tmp);
+            global.log.logMsg("Renamed file " + renameFile + " to " + renameTo);
+        } catch (IOException e) {
             curCon.respond("553 Requested action not taken.");
+            global.log.logMsg("RNTO: Rename failed for " + renameFile + " -> " + str);
         }
     }
 }
