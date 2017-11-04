@@ -55,9 +55,9 @@ public class Main {
         SimpleDavSessionProvider sessionProvider = new SimpleDavSessionProvider();
 
         // Path fsRoot = mountFile(new File(System.getProperty("user.home"), "tmp").getAbsolutePath());
-        // Path fsRoot = mountMysqlfs("testroot");
-        // Path fsRoot = mountS3("eventrouting-test");
-        Path fsRoot = mountZip(new File(System.getProperty("user.home"), "demo.zip").getAbsolutePath());
+        Path fsRoot = mountMysqlfs("testroot");
+//        Path fsRoot = mountS3("eventrouting-test");
+        // Path fsRoot = mountZip(new File(System.getProperty("user.home"), "demo.zip").getAbsolutePath());
 
 
         SimpleDavLocatorFactory simpleLocatorFactory = new SimpleDavLocatorFactory("/webdav", fsRoot);
