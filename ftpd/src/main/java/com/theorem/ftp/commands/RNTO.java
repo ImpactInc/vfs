@@ -19,7 +19,7 @@ public class RNTO {
         
         if (curCon.canWriteFile(str) == false) {
             curCon.respond("550 Requested action not taken.");
-            global.log.logMsg("RNTO: No write permission for file " + str + " in directory " + curCon.curWD);
+            global.log.logMsg("RNTO: No write permission for file " + str + " in directory " + curCon.getCwd());
             return;
         }
         

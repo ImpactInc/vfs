@@ -57,8 +57,6 @@ public class CurrentInfo {
     /*
     */
     // These are side effects based on what's currently being constructed as a directory and / or file.
-    public String curWD;        // current Virtual Working Dirctory
-    public String curPDir;    // current physical root directory
     public String curVDir;    // current virtual root directory
     public String curFile;    // side effect of getDir();
 

@@ -2,6 +2,7 @@ package com.theorem.ftp;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -101,13 +102,7 @@ public class LogFTP {
         // Get time to run in seconds from start time to now.
         long diffTime = (new Date().getTime() - startTime) / 1000;
         String accessMode = curCon.entity.equals("anonymous") ? "a" : "r";
-        String fName = curCon.curVDir + curCon.curFile;
-        
-        // Sometimes the two parts will join forming the string "//" in the
-        // path.  Try to fix this (should be done deep down elsewhere):
-        while (fName.indexOf("//") >= 0) {
-            fName = Text.replace(fName, "//", "/");
-        }
+        Path fName = curCon.getCwd().resolve(curCon.curFile);
         
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
         String dateStr = sdf.format(new Date());

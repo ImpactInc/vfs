@@ -11,6 +11,6 @@ public class PWD {
     
     public PWD(CurrentInfo curCon, String str) {
         
-        curCon.respond("257 \"" + curCon.curWD + "\" is current directory.");
+        curCon.respond("257 \"" + curCon.getCwd() + "\" is current directory.");
     }
 }
