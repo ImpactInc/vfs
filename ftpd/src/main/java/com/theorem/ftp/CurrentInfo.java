@@ -47,7 +47,8 @@ public class CurrentInfo {
     public BufferedReader in = null;
     public Socket clientSocket;        // incoming client socket
     public DataSocket dataSocket = null;    // data socket (active or PASV)
-    public int dataPort;            // current data port
+    public int dataPort;                        // current data port
+    public int localDataPort;                   // current data port
     public InetAddress dataIP = null;    // Current data IP address
     public Vector acct;            // Account names (if used) from ACCT command.
     

@@ -79,8 +79,11 @@ public class FtpSession implements Runnable {
         
         global.log.logMsg("Accepting Connection from " + curCon.remoteIP);
         
-        curCon.dataPort = _incoming.getPort() - 1;    // Get default data port N-1
         
+        // Get default data port N-1 local -> N+1 remote
+        curCon.dataPort = _incoming.getPort() + 1;
+        curCon.localDataPort = _incoming.getLocalPort() - 1;
+    
         try {
             curCon.in = new BufferedReader(new InputStreamReader(_incoming.getInputStream()));
             curCon.out = new PrintWriter(_incoming.getOutputStream(), true);
@@ -189,10 +192,10 @@ public class FtpSession implements Runnable {
                 new RNTO(curCon, str);
             } else if (ustr.startsWith("STOR")) {
                 // No Append, No generation of unique name
-                new STOR(curCon, str, false, false);    // false means no append.
+                new STOR(curCon, str, false);    // false means no append.
             } else if (ustr.startsWith("STOU")) {
                 // No Append, Generation of unique name
-                new STOR(curCon, str, false, true);    // false means no append.
+                new STOR(curCon, str, true);    // false means no append.
             } else if (ustr.startsWith("TYPE")) {
                 new TYPE(curCon, str);
             } else if (ustr.startsWith("ALLO")) {

@@ -1,10 +1,7 @@
 package com.theorem.ftp;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketException;
+import java.net.*;
 
 
 /**
@@ -124,7 +121,12 @@ public class DataSocket {
     public Socket getDataSocket(CurrentInfo curCon) {
         if (_pasvSSocket == null) {
             try {
-                return new Socket(curCon.dataIP, curCon.dataPort);
+                Socket s1 = new Socket();
+                s1.setReuseAddress(true);
+                s1.setKeepAlive(true);
+                s1.bind(new InetSocketAddress(curCon.localIP, curCon.localDataPort));
+                s1.connect(new InetSocketAddress(curCon.dataIP, curCon.dataPort));
+                return s1;
             } catch (IOException ioe) {
                 // This could be caused by a NAT'd private address, try the actual remote address.
                 try {

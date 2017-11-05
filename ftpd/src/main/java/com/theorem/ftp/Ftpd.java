@@ -76,7 +76,10 @@ public class Ftpd implements Runnable {
         
             while (true) {
                 Socket _incoming = s.accept();
-            
+                // Set the keep-alive option on the socket for the control channel to prevent it from being
+                // disconnected during long transfers.
+                _incoming.setKeepAlive(true);
+                
                 // update global for each ftp transaction thread.
                 // global = ftpcfg.getGlobal();
             
