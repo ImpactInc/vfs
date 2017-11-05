@@ -5,8 +5,7 @@
 /gradlew
 /gradlew.bat
 /out
-/mysqlfs/build
-/webdav/build
-/ftpd/build
 /classes
+/*/out
+/*/build
 
