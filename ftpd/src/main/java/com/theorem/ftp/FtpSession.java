@@ -232,10 +232,6 @@ public class FtpSession implements Runnable {
                 // CHMOD Changes mode of a file (SITE CHMOD 755 FileName).
                 // These (except for idler time) can't be set within pure Java 2.x
                 new SITE(curCon, str);
-            } else if (ustr.startsWith("APPE")) {
-                // APPEnds to the file
-                // Append, No generation of unique name
-                new STOR(curCon, str, true, false);
             } else if (ustr.startsWith("SYST")) {
                 new SYST(curCon, str);
             } else {

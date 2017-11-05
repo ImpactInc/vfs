@@ -41,7 +41,7 @@ public class RETR {
                 return;
             }
         
-            // If there's a reciept class run the external class.
+            // If there's a receipt class run the external class.
             // The class's getStart method can refuse the file retrieval.
             if (global.getFileListener() != null) {
                 String response = global.getFileListener().getBefore(curCon.entity, file);
@@ -62,13 +62,13 @@ public class RETR {
             String connMsg = "150 " + curCon.transferText() + " connection for " + arg;
             curCon.respond(connMsg + " (" + byteCount + " bytes)");
     
-            OutputStream out2 = t.getOutputStream();
+            OutputStream out = t.getOutputStream();
             
             if (curCon.transferType == curCon.ATYPE) {
                 // ASCII file transfers are  going to be a bit slow 'cause we have to read
                 // them a byte at a time to convert possible bare NL's or CRLF's to CRLF.
                 // This could be a binary file so don't try to read lines.
-                BufferedOutputStream outs = new BufferedOutputStream(out2);
+                BufferedOutputStream outs = new BufferedOutputStream(out);
     
                 InputStream in = Files.newInputStream(file);
                 BufferedInputStream src = new BufferedInputStream(in);
@@ -89,9 +89,9 @@ public class RETR {
                 
             } else {
                 // Binary transfer - quite fast.
-                Files.copy(file, out2);
+                Files.copy(file, out);
             }
-            out2.flush();
+            out.flush();
             curCon.respond("226 transfer complete");
     
             if (global.getFileListener() != null) {

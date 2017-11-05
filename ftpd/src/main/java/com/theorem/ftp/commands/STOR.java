@@ -12,12 +12,11 @@ import com.theorem.ftp.*;
 
 
 // STORe a file, could do STOU (store with unique file name).
-// Can perform an append if append = true.
 // Generate unique name if unique = true
 //
 public class STOR {
     
-    public STOR(CurrentInfo curCon, String str, boolean append, boolean unique) {
+    public STOR(CurrentInfo curCon, String str, boolean unique) {
 
         Global global = curCon.global;
         long start = new Date().getTime();    // aquire start time.
