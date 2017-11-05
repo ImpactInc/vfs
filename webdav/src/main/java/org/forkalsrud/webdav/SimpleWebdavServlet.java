@@ -2,6 +2,7 @@ package org.forkalsrud.webdav;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -26,16 +27,18 @@ public class SimpleWebdavServlet extends AbstractWebdavServlet {
     
 
     void dumpHeaders(HttpServletRequest request) {
-        System.err.println(request.getMethod() + " " + request.getRequestURI());
+    
+        PrintStream out = System.out;
+        out.println(request.getMethod() + " " + request.getRequestURI());
         Enumeration<String> en = request.getHeaderNames();
         while (en.hasMoreElements()) {
         
             String header = en.nextElement();
             String value = request.getHeader(header);
         
-            System.err.println(header + ": " + value);
+            out.println(header + ": " + value);
         }
-        System.err.println();
+        out.println();
     }
 
     /*
@@ -49,6 +52,14 @@ public class SimpleWebdavServlet extends AbstractWebdavServlet {
     }
     */
     
+    @Override
+    protected void doPut(WebdavRequest request, WebdavResponse response,
+            DavResource resource) throws IOException, DavException {
+        dumpHeaders(request);
+        request.setAttribute(request.getMethod(), Boolean.TRUE);
+        super.doPut(request, response, resource);
+    }
+
     @Override
     protected void doMkCol(WebdavRequest request, WebdavResponse response,
             DavResource resource) throws IOException, DavException {
