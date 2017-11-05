@@ -18,12 +18,14 @@ public class RETR {
 
         Global global = curCon.global;
         long start = new Date().getTime();    // aquire start time.
-        long byteCount = 0;    // bytes retrieved
+        long byteCount;    // bytes retrieved
         
         // Get the file path:
         str = str.substring(4).trim();
         String arg = str;
-        
+    
+        Path file = curCon.virtToPhys(str);
+
         if (curCon.canReadFile(str) == false) {
             curCon.respond("553 Requested action not taken.");
             global.log.logMsg("RETR: Requested action not taken. No permission to read " + str);
@@ -33,7 +35,6 @@ public class RETR {
     
         Socket t = curCon.dataSocket.getDataSocket(curCon);
         try {
-            Path file = curCon.virtToPhys(str);
             
             if (!Files.isRegularFile(file)) {
                 curCon.respond("553 Requested action not taken.");
@@ -106,6 +107,6 @@ public class RETR {
         }
         
         // log the successful transaction.
-        global.fLog.logMsg(global, curCon, start, byteCount, "o");
+        global.fLog.logMsg(global, curCon, file, start, byteCount, "o");
     }
 }

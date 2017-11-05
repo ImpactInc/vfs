@@ -92,8 +92,7 @@ public class LogFTP {
     
     static Logger log = LoggerFactory.getLogger("xfer");
 
-    public synchronized void logMsg(Global global, CurrentInfo curCon, long startTime, long size, String direction) {
-        int i;
+    public synchronized void logMsg(Global global, CurrentInfo curCon, Path fName, long startTime, long size, String direction) {
         
         // Special action ("_"): These characters can be are
         // "C" if the file was compressed, "U" if the file was uncompressed,
@@ -102,8 +101,8 @@ public class LogFTP {
         // Get time to run in seconds from start time to now.
         long diffTime = (new Date().getTime() - startTime) / 1000;
         String accessMode = curCon.entity.equals("anonymous") ? "a" : "r";
-        Path fName = curCon.getCwd().resolve(curCon.curFile);
-        
+        String transferType = curCon.transferType == curCon.ATYPE ? "a" : "b";
+    
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
         String dateStr = sdf.format(new Date());
         
@@ -112,7 +111,7 @@ public class LogFTP {
         ds.append(curCon.remoteSite).append(' ');
         ds.append(size).append(' ');
         ds.append(fName);
-        ds.append(" b _ ");
+        ds.append(' ').append(transferType).append(" _ ");
         ds.append(direction).append(' ');
         ds.append(accessMode).append(' ');
         ds.append(curCon.entity).append(' ');

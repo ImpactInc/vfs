@@ -43,7 +43,9 @@ public class STOR {
         // Get the file path.  Do it now (after unique) so we don't have an
         // error when the substring fails.
         str = str.substring(4).trim();
-        
+    
+        Path storFile = curCon.virtToPhys(str);
+
         if (curCon.canWriteFile(str) == false) {
             //global.log.logMsg("doesn't have permission to write file");
             curCon.respond("553 Requested action not taken.");
@@ -54,7 +56,6 @@ public class STOR {
         Socket dataSocket = curCon.dataSocket.getDataSocket(curCon);
 
         try {
-            Path storFile = curCon.virtToPhys(str);
         
             if (Files.isDirectory(storFile)) {
                 //global.log.logMsg("STOR: it's a directory.");
@@ -133,6 +134,6 @@ public class STOR {
             curCon.dataSocket.closeDataSocket(dataSocket);
         }
     
-        global.fLog.logMsg(global, curCon, start, byteCount, "i");
+        global.fLog.logMsg(global, curCon, storFile, start, byteCount, "i");
     }
 }
