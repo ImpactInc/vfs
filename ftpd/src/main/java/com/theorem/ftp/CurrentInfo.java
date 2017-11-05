@@ -1,19 +1,14 @@
 package com.theorem.ftp;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Stack;
 import java.util.Vector;
 import java.util.stream.Collectors;
-
-import com.theorem.ftp.util.Text;
 
 
 /**
@@ -54,16 +49,9 @@ public class CurrentInfo {
     
     public char transferType = ATYPE;    // Type of transfer, Ascii  (ATYPE) or Image (ITYPE).
     
-    /*
-    */
-    // These are side effects based on what's currently being constructed as a directory and / or file.
-    public String curVDir;    // current virtual root directory
-    public String curFile;    // side effect of getDir();
-
-    private Path root;
+    private Path physRoot;
     private Path cwd;
-
-
+    private Path virtRoot;
 
     public Global global;    // Convience copy of global data - every function/class should use this copy.
     
@@ -93,8 +81,9 @@ public class CurrentInfo {
     public void setLogin(String name, Permission perms) {
         entity = name;
         _perms = perms;
-        root = global.authenticator.getDirectory(name);
-        cwd = root;
+        physRoot = global.authenticator.getPhysicalRoot(name);
+        cwd = physRoot;
+        virtRoot = global.authenticator.getVirtualRoot(name);
     }
     
     /**
@@ -103,9 +92,9 @@ public class CurrentInfo {
      * @param path Virtual directory path.
      * @return the physical directory path.
      */
-    public Path virtToPhys(String path) throws IOException {
+    public Path virtToPhys(String path) {
         
-        return root.resolve(createAbsolutePath(path));
+        return physRoot.resolve(createAbsolutePath(path));
         /*
         path = createAbsolutePath(path);
         //global.log.logMsg("CurrentInfo.virtToPhys returns: " + _perms.virtToPhys(path));
@@ -113,13 +102,17 @@ public class CurrentInfo {
         */
     }
     
+    public Path virtual(String path) {
+        
+        return virtRoot.relativize(virtToPhys(path));
+    }
     
     public Path getCwd() {
         return cwd;
     }
     
-    public Path getRoot() {
-        return root;
+    public Path getPhysRoot() {
+        return physRoot;
     }
 
     /**
@@ -207,7 +200,7 @@ public class CurrentInfo {
      */
     public String getDir(Path filePath) {
     
-        return root.relativize(filePath).toString();
+        return physRoot.relativize(filePath).toString();
     /*
         String pathV = null;    // full virtual path of file's directory.
         int sep;
@@ -231,13 +224,13 @@ public class CurrentInfo {
     
     /**
      * Create an absolute virtual path. The incoming path may be relative or absolute.
-     * This also resolves any ".."'s, but not past the root directory.
+     * This also resolves any ".."'s, but not past the physRoot directory.
      * The path, if not absolute, is made from the CurWD (current working directory).
      *
      * @param path some path form.
      * @return absolute path.
      */
-    public String createAbsolutePath(String path) throws IOException {
+    public String createAbsolutePath(String path) {
         
         if (path == null || path.length() == 0) {
             return "/";    // Sometimes this inanity comes from web browsers.
@@ -245,7 +238,7 @@ public class CurrentInfo {
         
         // Take CWD into account
         if (!path.startsWith("/")) {
-            path = root.relativize(cwd).toString() + "/" + path;
+            path = physRoot.relativize(cwd).toString() + "/" + path;
         }
         ArrayList<String> stack = new ArrayList<>();
         for (String p : Arrays.asList(path.split("/"))) {
@@ -254,7 +247,7 @@ public class CurrentInfo {
                 continue;
             }
             if ("~".equals(p)) {
-                // We don't distinguish between home dire and root dir
+                // We don't distinguish between home dire and physRoot dir
                 stack.clear();
                 continue;
             }
@@ -315,8 +308,8 @@ public class CurrentInfo {
     }
 
 
-    public void setRoot(Path root) {
-        this.root = root;
+    public void setPhysRoot(Path physRoot) {
+        this.physRoot = physRoot;
     }
     
     public void setCwd(Path cwd) {

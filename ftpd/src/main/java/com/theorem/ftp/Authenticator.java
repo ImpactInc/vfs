@@ -43,6 +43,8 @@ public interface Authenticator {
     boolean authenticate(String name, String password);
 
 
-    Path getDirectory(String name);
+    Path getPhysicalRoot(String name);
     
+    Path getVirtualRoot(String name);
+
 }

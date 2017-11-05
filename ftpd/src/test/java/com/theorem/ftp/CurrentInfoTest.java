@@ -20,7 +20,7 @@ public class CurrentInfoTest {
     @Before
     public void setUp() {
         root = new File(System.getProperty("java.io.tmpdir")).toPath();
-        info.setRoot(root);
+        info.setPhysRoot(root);
         info.setCwd(root.resolve("user"));
     }
     

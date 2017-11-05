@@ -114,15 +114,23 @@ public class Ftpd implements Runnable {
 
         instance.global.setAuthenticator(new Authenticator() {
     
+            Path root = new File(System.getProperty("user.home"), "tmp").toPath();
+    
             @Override
             public boolean authenticate(String name, String password) {
                 return true;
             }
     
             @Override
-            public Path getDirectory(String name) {
-                return new File(".").toPath();
+            public Path getPhysicalRoot(String name) {
+                return root;
             }
+
+            @Override
+            public Path getVirtualRoot(String name) {
+                return root;
+            }
+
         });
         
         instance.run();

@@ -25,7 +25,7 @@ public class MDTM {
         
         if (curCon.canReadFile(str) == false) {
             curCon.respond("550 Requested action not taken.");
-            global.log.logMsg("MDTM: No permission to read file " + curCon.curVDir + curCon.curFile);
+            global.log.logMsg("MDTM: No permission to read file " + str);
             return;
         }
         

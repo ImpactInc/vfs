@@ -33,17 +33,13 @@ public class LIST {
         String listDir;
         String ustr = str.toUpperCase();
 
-        try {
-            if (ustr.startsWith("LIST")) {
-                showList(curCon, curCon.getCwd(), this::details);
-            } else {
-                // NLST
-                String arg = str.substring(4).trim();
-                Path dir = arg.length() > 0 ? curCon.virtToPhys(arg) : curCon.getCwd();
-                showList(curCon, dir, this::nameOnly);
-            }
-        } catch (IOException e) {
-            curCon.global.log.logMsg(e.getMessage());
+        if (ustr.startsWith("LIST")) {
+            showList(curCon, curCon.getCwd(), this::details);
+        } else {
+            // NLST
+            String arg = str.substring(4).trim();
+            Path dir = arg.length() > 0 ? curCon.virtToPhys(arg) : curCon.getCwd();
+            showList(curCon, dir, this::nameOnly);
         }
     }
     
@@ -51,12 +47,8 @@ public class LIST {
     // listDir is assumed to be tested for permission beforehand.
     //
     void showList(CurrentInfo curCon, String listDir, Function<Path, String> details) {
-        try {
-            Path dir = curCon.virtToPhys(listDir);
-            showList(curCon, dir, details);
-        } catch (IOException e) {
-            curCon.global.log.logMsg(e.getMessage());
-        }
+        Path dir = curCon.virtToPhys(listDir);
+        showList(curCon, dir, details);
     }
     // Display the contents of a directory
     // listDir is assumed to be tested for permission beforehand.

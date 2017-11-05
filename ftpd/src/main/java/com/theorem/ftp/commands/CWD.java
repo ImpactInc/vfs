@@ -34,29 +34,25 @@ public class CWD {
             return;
         }
         
-        try {
-            Path nextDir = curCon.virtToPhys(str);
-            if (!Files.isDirectory(nextDir)) {
-                curCon.respond("450 Requested file action not taken.");
-                global.log.logMsg("CDUP: Can't CHDIR to " + str);
+        Path nextDir = curCon.virtToPhys(str);
+        if (!Files.isDirectory(nextDir)) {
+            curCon.respond("450 Requested file action not taken.");
+            global.log.logMsg("CDUP: Can't CHDIR to " + str);
+            return;
+        }
+        
+        // If there's a reciept class run the external class.
+        // The class's getStart method can refuse the file retrieval.
+        if (global.getFileListener() != null) {
+            String response = global.getFileListener().enterDirectory(curCon.entity, nextDir, str);
+            if (response != null) {
+                curCon.respond(response);
+                global.log.logMsg(response);
                 return;
             }
-        
-            // If there's a reciept class run the external class.
-            // The class's getStart method can refuse the file retrieval.
-            if (global.getFileListener() != null) {
-                String response = global.getFileListener().enterDirectory(curCon.entity, nextDir, str);
-                if (response != null) {
-                    curCon.respond(response);
-                    global.log.logMsg(response);
-                    return;
-                }
-            }
-            curCon.setCwd(nextDir);    // Restore ourselves to our old directory.
-            new ShowDisplayFile(global, nextDir, curCon.out);
-            curCon.respond("250 " + cmd + " command succesful.");
-        } catch (IOException e) {
-            curCon.respond("450 Requested file action not taken.");
         }
+        curCon.setCwd(nextDir);    // Restore ourselves to our old directory.
+        new ShowDisplayFile(global, nextDir, curCon.out);
+        curCon.respond("250 " + cmd + " command succesful.");
     }
 }

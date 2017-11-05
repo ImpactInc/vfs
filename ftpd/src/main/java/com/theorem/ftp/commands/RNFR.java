@@ -26,19 +26,14 @@ public class RNFR {
             return;
         }
         
-        try {
-            Path rnfrFile = curCon.virtToPhys(str);
-            if (!Files.isRegularFile(rnfrFile)) {
-                curCon.respond("550 Requested action not taken.");
-                global.log.logMsg("RNFR: " + rnfrFile + " isn't a file");
-                return;
-            }
-            curCon.setRenameFile(rnfrFile);
-            curCon.respond("350 RNFR accepted  Enter the new file name.");
-        } catch (IOException e) {
+        Path rnfrFile = curCon.virtToPhys(str);
+        if (!Files.isRegularFile(rnfrFile)) {
             curCon.respond("550 Requested action not taken.");
-            global.log.logMsg(e.getMessage());
+            global.log.logMsg("RNFR: " + rnfrFile + " isn't a file");
+            return;
         }
+        curCon.setRenameFile(rnfrFile);
+        curCon.respond("350 RNFR accepted  Enter the new file name.");
     }
     
 }

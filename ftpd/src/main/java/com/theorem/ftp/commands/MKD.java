@@ -20,7 +20,7 @@ public class MKD {
         String virt = str.substring(4).trim();
         try {
             virt = curCon.createAbsolutePath(virt);
-            Path newDir = curCon.getRoot().resolve(virt);
+            Path newDir = curCon.getPhysRoot().resolve(virt);
             Files.createDirectories(newDir);
             global.log.logMsg("Created directory " + str + "(" + virt + ")");
             curCon.respond("250 MKD command succesful");
