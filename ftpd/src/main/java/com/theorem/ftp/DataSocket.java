@@ -25,6 +25,11 @@ public class DataSocket {
         _pasvSSocket = null;
     }
     
+    
+    public interface PortFormatter {
+        String format(int port);
+    }
+    
     /**
      * Create the pasv server socket and wait for connection.
      * return false if something breaks.
@@ -33,7 +38,7 @@ public class DataSocket {
      * @param curCon CurrentInfo object for this entity.
      * @return true if the socket was opened sucessfuly.
      */
-    public boolean createPasvSocket(CurrentInfo curCon) {
+    public boolean createPasvSocket(CurrentInfo curCon, PortFormatter formatter) {
 
         if (_pasvSSocket != null) {
             // some automated systems open and close sockets for fun.
@@ -51,11 +56,7 @@ public class DataSocket {
             return false;
         }
         
-        int p1 = sport >> 8;
-        int p2 = sport & 0xff;
-        
-        String tmp = curCon.localIPName;
-        curCon.respond("227 Entering Passive Mode. (" + tmp + "," + p1 + "," + p2 + ')');
+        curCon.respond(formatter.format(sport));
         
         try {
             _pasvSocket = _pasvSSocket.accept();

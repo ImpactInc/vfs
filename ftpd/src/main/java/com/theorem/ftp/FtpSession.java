@@ -25,7 +25,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.ServerSocket;
 import java.net.Socket;
 
 import com.theorem.ftp.commands.*;
@@ -186,6 +185,8 @@ public class FtpSession implements Runnable {
                 new MDTM(curCon, str);
             } else if (ustr.startsWith("PASV")) {
                 new PASV(curCon, str);
+            } else if (ustr.startsWith("EPSV")) {
+                new EPSV(curCon, str);
             } else if (ustr.startsWith("RNFR")) {
                 new RNFR(curCon, str);
             } else if (ustr.startsWith("RNTO")) {

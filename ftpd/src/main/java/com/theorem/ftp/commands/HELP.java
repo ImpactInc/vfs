@@ -25,6 +25,7 @@ public class HELP {
                 + "214-NOOP\n"
                 + "214-PASS\n"
                 + "214-PASV\n"
+                + "214-EPSV\n"
                 + "214-PORT\n"
                 + "214-PWD\n"
                 + "214-REST\n"
