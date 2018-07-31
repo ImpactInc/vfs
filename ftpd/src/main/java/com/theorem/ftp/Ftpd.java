@@ -23,13 +23,12 @@ package com.theorem.ftp;
 
 import java.io.*;
 import java.net.*;
+import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.theorem.ftp.commands.*;
+import org.apache.tomcat.jdbc.pool.DataSource;
+import org.forkalsrud.mysqlfs.MysqlFileSystemProvider;
 
 
 /**
@@ -104,18 +103,19 @@ public class Ftpd implements Runnable {
      * The only argument supported is the name of the directory
      * where the configuration files (ftp.cfg and dir.cfg) are found.
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
     
         Ftpd instance = new Ftpd();
 
         instance.initialize();
     
         instance.global.FTPPort = 12121;
+    
+        // Path fsRoot = new File(System.getProperty("user.home"), "tmp").toPath();
+        final Path fsRoot = mountMysqlfs("testroot");
 
         instance.global.setAuthenticator(new Authenticator() {
-    
-            Path root = new File(System.getProperty("user.home"), "tmp").toPath();
-    
+        
             @Override
             public boolean authenticate(String name, String password) {
                 return true;
@@ -123,12 +123,12 @@ public class Ftpd implements Runnable {
     
             @Override
             public Path getPhysicalRoot(String name) {
-                return root;
+                return fsRoot;
             }
 
             @Override
             public Path getVirtualRoot(String name) {
-                return root;
+                return fsRoot;
             }
 
         });
@@ -136,6 +136,28 @@ public class Ftpd implements Runnable {
         instance.run();
     }
     
+    
+    static Path mountMysqlfs(String rootName) throws IOException {
+        DataSource pool = new DataSource();
+        pool.setDriverClassName("com.mysql.cj.jdbc.Driver");
+        pool.setUrl("jdbc:mysql://localhost/mysqlfs");
+        pool.setUsername("root");
+        pool.setPassword("");
+        
+        Properties props = new Properties();
+        props.setProperty("useSSL", "false");
+        pool.setDbProperties(props);
+        
+        MysqlFileSystemProvider provider = new MysqlFileSystemProvider();
+        provider.setDataSource(pool);
+        
+        FileSystem fs = provider.newFileSystem(URI.create("mysqlfs:" + rootName + "/"), null);
+        return single(fs.getRootDirectories());
+    }
+    
+    static <T> T single(Iterable<T> all) {
+        return all.iterator().next();
+    }
     
 }
 

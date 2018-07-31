@@ -1,15 +1,11 @@
 package com.theorem.ftp;
 
-import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.theorem.ftp.util.Text;
 
 
 // Log a message to an error log file.
