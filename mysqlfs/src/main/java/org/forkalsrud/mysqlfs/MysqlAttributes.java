@@ -53,7 +53,7 @@ public class MysqlAttributes implements BasicFileAttributes {
     
     @Override
     public boolean isDirectory() {
-        return "dir".equals(type);
+        return "dir".equals(type) || "root".equals(type);
     }
     
     @Override
