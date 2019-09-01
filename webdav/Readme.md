@@ -10,7 +10,7 @@ project.
 
 The biggest challenges have been:
 
-* Jackrabbit's rpository has a notion of a "workspace"
+* Jackrabbit's repository has a notion of a "workspace"
   in addition to a path. Here the workspace is just
   another (top level) directory. Unfortunately one is
   needed, so you can't access just `/`.
@@ -23,3 +23,7 @@ The biggest challenges have been:
   to `SimpleDavResource.addMember()`.
   The gist of it is a dynamic proxy on `InputContext` to
   expose a new property: "METHOD".
+
+
+The Jackrabbit software is distributed under the Apache
+license, so this module is also governed by that `LICENSE.txt`.
