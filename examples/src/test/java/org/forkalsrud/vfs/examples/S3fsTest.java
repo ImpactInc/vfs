@@ -1,4 +1,4 @@
-package org.forkalsrud.webdav;
+package org.forkalsrud.vfs.examples;
 
 import java.io.File;
 import java.io.FileReader;
@@ -12,6 +12,7 @@ import java.util.Properties;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 
@@ -49,6 +50,7 @@ public class S3fsTest {
         root.getFileSystem().close();
     }
     
+    @Ignore
     @Test
     public void testListFiles() throws IOException {
     

@@ -9,19 +9,6 @@ repositories {
 dependencies {
     compile 'javax.servlet:servlet-api:2.5'
     compile 'org.apache.jackrabbit:jackrabbit-webdav:2.15.2'
-    compile 'org.eclipse.jetty:jetty-server:9.3.0.M1'
-    compile 'org.eclipse.jetty:jetty-servlet:9.3.0.M1'
-    compile 'org.eclipse.jetty:jetty-webapp:9.3.0.M1'
-
-    compile project(":mysqlfs")
-    compile "org.apache.tomcat:tomcat-jdbc:7.0.62"
-
-    compile 'com.upplication:s3fs:1.5.3'
-
-    compile 'com.github.marschall:zipfilesystem-standalone:1.0.1'
-
-    runtime 'mysql:mysql-connector-java:6.0.6'
-
     runtime 'org.slf4j:slf4j-jdk14:1.7.10'
     testCompile group: 'junit', name: 'junit', version: '4.11'
 }
