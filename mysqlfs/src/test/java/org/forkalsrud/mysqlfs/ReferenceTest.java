@@ -20,7 +20,7 @@ import org.junit.Test;
 public class ReferenceTest {
     
     @Test
-    public void testGetAttributesForNonExistentFile() throws IOException {
+    public void testGetAttributesForNonExistentFile() {
         
         try {
             Path p = new File(System.getProperty("user.home"), "nonexistent").toPath();

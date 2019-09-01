@@ -20,26 +20,29 @@ package org.forkalsrud.mysqlfs;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
-import java.nio.file.*;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Properties;
 
-import org.apache.tomcat.jdbc.pool.DataSource;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 
 public class MysqlFileSystemProviderTest {
 
     static Path root;
-
+    static SingleConnectionDataSource pool;
+    
+    
     @BeforeClass
-    public static void mount() throws IOException {
-        DataSource pool = new DataSource();
+    public static void mount() {
+        
+        pool = new SingleConnectionDataSource();
         pool.setDriverClassName("com.mysql.cj.jdbc.Driver");
         pool.setUrl("jdbc:mysql://localhost/mysqlfs");
         pool.setUsername("root");
@@ -47,22 +50,21 @@ public class MysqlFileSystemProviderTest {
     
         Properties props = new Properties();
         props.setProperty("useSSL", "false");
-        pool.setDbProperties(props);
+        pool.setConnectionProperties(props);
     
         MysqlFileSystemProvider provider = new MysqlFileSystemProvider();
         provider.setDataSource(pool);
-    
-        FileSystem fs = provider.newFileSystem(URI.create("mysqlfs:testroot/"), null);
-        root = single(fs.getRootDirectories());
-    }
-    static <T> T single(Iterable<T> all) {
-        return all.iterator().next();
+        
+        root = provider.getFileSystemRoot("testroot");
     }
     
+
     @AfterClass
     public static void umount() throws IOException {
         root.getFileSystem().close();
+        pool.destroy();
     }
+
 
     @Test
     public void testPathsGetAndDirectoryStream() throws IOException {
@@ -72,7 +74,9 @@ public class MysqlFileSystemProviderTest {
                 if (Files.isRegularFile(p)) {
                     System.out.println(p.toString());
                     
-                    Files.copy(p, System.out);
+                    if (p.toString().endsWith(".txt")) {
+                        Files.copy(p, System.out);
+                    }
                 } else {
                     System.out.println(p.toString() + "/");
                 }

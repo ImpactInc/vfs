@@ -4,7 +4,9 @@ mysqlfs
 A NIO file system based on two MySQL tables. One for the directory
 structure and one for the block storage. The block size was
 arbitrarily chosen to be 8kB, which is probably too small for any
-meaningful production use, but easy to change.
+meaningful production use, but easy to change. There are probably
+many opportunities for optimization. There is no form of caching
+used anywhere.
 
 There are limitations to the operations we support. Random access file
 operations are supported only through a hack, where a temporary file
@@ -27,8 +29,8 @@ database, but some things are better accessed in a streaming fashion,
 like files. For availability and disaster recovery we tend to
 replicate our databases, and have rather nice systems for that. On the
 file system side we have NFS, but operations teams typically don't
-like to be responsible for wide area NFS setups. So, imlementing the
-file system interface in the DB lets us have only the DB
+like to be responsible for wide area NFS setups. So, implementing the
+file system interface with the DB lets us have only the DB
 replication/backup/etc. to deal with operationally. Database snapshots
 for testing and such also conveniently include file data as well as
 table data.
@@ -40,9 +42,9 @@ hacks to implement the LOB operations, which is less than ideal.
 
 Using a fairly standard file system inteface also makes it easier to
 switch out different implementations. For example we can bolt a WebDAV
-fron end onto the mysql file system to mount it remotely in a standard
-`macos` mount (Command+K in the Finder). I'm sure there are similar
-support in Linux and Microsoft.
+front end onto the mysql file system to mount it remotely in a standard
+`macos` mount (Command+K in the Finder). I'm sure there is similar
+support in Linux and in Microsoft Windows.
 
 
 Any use of this code assumes the following two tables already present:
@@ -67,3 +69,21 @@ create table blocks (
   PRIMARY KEY (dir, seq));
 
 ```
+
+If desired the table names can be prefixed, if you need to adhere to a
+naming convention. For example if you want the table to be named
+`iram_fs_direntry` instead of just `direntry`, you can call the setter
+on the file system provider: `provider.setTablePrefix("iram_fs_");`.
+
+
+Portablility:
+-------------
+
+This depends on MySQL, but porting to any other relational DB should be
+relatively easy. The code makes use of the MySQL specific `REPLACE`
+statement, for convenience. Replacing that with `UPDATE ... ON DUPLICATE KEY UPDATE`
+or simply a `DELETE` followed by `INSERT` should also work.
+
+Another convenience is Spring Framework's `JdbcTemplate`, from which a handful
+of methods are used. If the Spring dependency is a problem that will have to be
+rewritten.

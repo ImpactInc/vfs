@@ -52,7 +52,7 @@ public class MysqlFileSystem extends FileSystem {
     final String root;
     private final Charset CS = StandardCharsets.UTF_8;
 
-    public MysqlFileSystem(MysqlFileSystemProvider fileSystemProvider, DataSource dataSource, String rootName) throws IOException {
+    public MysqlFileSystem(MysqlFileSystemProvider fileSystemProvider, String rootName) {
         this.root = rootName;
         this.fileSystemProvider = fileSystemProvider;
     }
@@ -81,9 +81,13 @@ public class MysqlFileSystem extends FileSystem {
         return "/";
     }
 
+    public Path getRootPath() {
+        return new MysqlPath(this, "/".getBytes(CS));
+    }
+
     @Override
     public Iterable<Path> getRootDirectories() {
-        return Collections.singleton(new MysqlPath(this, "/".getBytes(CS)));
+        return Collections.singleton(getRootPath());
     }
 
     @Override

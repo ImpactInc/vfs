@@ -18,6 +18,7 @@
  */
 package org.forkalsrud.mysqlfs;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -44,18 +45,76 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
 
     private final Map<String, MysqlFileSystem> fileSystems = new HashMap<>();
     private JdbcTemplate tmpl;
+    private Query query = new Query("");
 
     public void setDataSource(DataSource ds) {
         this.tmpl = new JdbcTemplate(ds);
     }
+    
+    public void setTablePrefix(String prefix) {
+        this.query = new Query(prefix);
+    }
+
+    static class Query {
+    
+        public final String GET_BLOCK;
+        public final String UPDATE_ATIME;
+        public final String REPLACE_BLOCK;
+        public final String UPDATE_SIZE_MTIME;
+        public final String UPDATE_MTIME;
+        public final String UPDATE_MTIME2;
+        public final String DELETE_BLOCKS;
+        public final String COUNT_FILES;
+        public final String DELETE_FILE;
+        public final String COPY_BLOCKS;
+        public final String MOVE_FILE;
+        public final String GET_ATTRS;
+        public final String SET_TIMES;
+        public final String LIST_NAMES;
+        public final String RESOLVE;
+        public final String CREATE_FILE;
+        public final String GET_TYPE;
+
+        public Query(String prefix) {
+        
+            String p = prefix != null ? prefix.trim() : "";
+            String direntry = p + "direntry";
+            String blocks = p + "blocks";
+    
+            GET_BLOCK = "SELECT data FROM " + blocks + " WHERE dir = ? AND seq = ?";
+            UPDATE_ATIME = "UPDATE " + direntry + " SET atime = ? WHERE id = ?";
+            REPLACE_BLOCK = "REPLACE INTO " + blocks + " SET data = ?, dir = ?, seq = ?";
+            UPDATE_SIZE_MTIME = "UPDATE " + direntry + " SET size = ?, mtime = ? WHERE id = ?";
+            UPDATE_MTIME = "UPDATE " + direntry + " SET mtime = ? WHERE id = ?";
+            UPDATE_MTIME2 = "UPDATE " + direntry + " SET mtime = ? WHERE id in (?, ?)";
+            DELETE_BLOCKS = "DELETE FROM " + blocks + " WHERE dir = ?";
+            COUNT_FILES = "SELECT count(1) FROM " + direntry + " WHERE parent = ?";
+            DELETE_FILE = "DELETE FROM " + direntry + " WHERE id = ?";
+            COPY_BLOCKS = "INSERT INTO " + blocks + " SELECT ?, seq, data FROM " + blocks + " WHERE dir = ?";
+            MOVE_FILE = "UPDATE " + direntry + " SET parent = ?, name = ? WHERE id = ?";
+            GET_ATTRS = "SELECT id, type, size, ctime, mtime, atime FROM " + direntry + " WHERE id = ?";
+            SET_TIMES = "UPDATE " + direntry + " SET mtime = ?, atime = ?, ctime = ? WHERE id = ?";
+            LIST_NAMES = "SELECT name FROM " + direntry + " WHERE parent = ?";
+            RESOLVE = "SELECT id FROM " + direntry + " WHERE parent = ? AND name = ?";
+            CREATE_FILE = "INSERT INTO " + direntry + " SET parent = ?, type = ?, name = ?, size = 0, ctime = ?";
+            GET_TYPE = "SELECT type FROM " + direntry + " WHERE id = ?";
+        }
+    }
+
 
     @Override
     public String getScheme() {
         return "mysqlfs";
     }
+    
+    
+    public Path getFileSystemRoot(String rootName) {
+        return getFileSystem(URI.create(getScheme() + ":" + rootName + "/"), true).getRootPath();
+    }
+    
 
     @Override
-    public MysqlFileSystem newFileSystem(URI uri, Map<String, ?> env) throws IOException {
+    public MysqlFileSystem newFileSystem(URI uri, Map<String, ?> env) {
         synchronized (fileSystems) {
             String schemeSpecificPart = uri.getSchemeSpecificPart();
             int i = schemeSpecificPart.indexOf("/");
@@ -66,7 +125,7 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
             if (fileSystem != null) {
                 throw new FileSystemAlreadyExistsException(schemeSpecificPart);
             }
-            fileSystem = new MysqlFileSystem(this, null, schemeSpecificPart);
+            fileSystem = new MysqlFileSystem(this, schemeSpecificPart);
             fileSystems.put(schemeSpecificPart, fileSystem);
             return fileSystem;
         }
@@ -87,11 +146,7 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
             MysqlFileSystem fileSystem = fileSystems.get(schemeSpecificPart);
             if (fileSystem == null) {
                 if (create) {
-                    try {
-                        fileSystem = newFileSystem(uri, null);
-                    } catch (IOException e) {
-                        throw (FileSystemNotFoundException) new FileSystemNotFoundException(schemeSpecificPart).initCause(e);
-                    }
+                    fileSystem = newFileSystem(uri, null);
                 } else {
                     throw new FileSystemNotFoundException(schemeSpecificPart);
                 }
@@ -139,7 +194,7 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
     
         long id = resolve(path);
         if (id == 0L) {
-            throw new IOException("Not found: " + path);
+            throw new FileNotFoundException("Not found: " + path);
         }
         return newInputStream(id);
     }
@@ -160,10 +215,8 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
             
             void next() {
                 bufPos = 0;
-                buf = queryFor(byte[].class,
-                        "SELECT data FROM blocks WHERE dir = ? AND seq = ?",
-                        id, ++bufNo);
-                tmpl.update("UPDATE direntry SET atime = ? WHERE id = ?", new Date(), id);
+                buf = queryFor(byte[].class, query.GET_BLOCK, id, ++bufNo);
+                tmpl.update(query.UPDATE_ATIME, new Date(), id);
             }
             
             void copy(byte[] dst, int dstPos, int length) {
@@ -173,7 +226,7 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
             }
 
             @Override
-            public int read(byte[] dst, int pos, int len) throws IOException {
+            public int read(byte[] dst, int pos, int len) {
                 if (buf == null) {
                     return -1;
                 }
@@ -223,7 +276,7 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
             if (opt.contains(StandardOpenOption.CREATE, StandardOpenOption.CREATE_NEW)) {
                 id = create(path, "file");
             } else {
-                throw new IOException("Not found: " + path);
+                throw new FileNotFoundException("Not found: " + path);
             }
         } else {
             if (opt.contains(StandardOpenOption.TRUNCATE_EXISTING)) {
@@ -259,8 +312,8 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
                 } else {
                     data = buf;
                 }
-                tmpl.update("REPLACE INTO blocks SET data = ?, dir = ?, seq = ?", data, id, bufNo);
-                tmpl.update("UPDATE direntry SET size = ?, mtime = ? WHERE id = ?", pos, new Date(), id);
+                tmpl.update(query.REPLACE_BLOCK, data, id, bufNo);
+                tmpl.update(query.UPDATE_SIZE_MTIME, pos, new Date(), id);
                 flushed = true;
             }
     
@@ -283,7 +336,7 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
                 flushed = false;
             }
         
-            public void write(byte src[], int off, int len) throws IOException {
+            public void write(byte src[], int off, int len) {
                 
                 int remainingToWrite = len;
                 int srcPos = off;
@@ -319,7 +372,7 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
     }
 
     @Override
-    public DirectoryStream<Path> newDirectoryStream(final Path dir, final DirectoryStream.Filter<? super Path> filter) throws IOException {
+    public DirectoryStream<Path> newDirectoryStream(final Path dir, final DirectoryStream.Filter<? super Path> filter) {
         List<Path> list = list(dir);
         final Stream<Path> stream = list.stream().filter(predicateOf(filter));
         return new DirectoryStream<Path>() {
@@ -353,12 +406,12 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
         return new LocalCopySeekableByteChannel(id, new LocalCopySeekableByteChannel.Sync() {
     
             @Override
-            public InputStream read() throws IOException {
+            public InputStream read() {
                 return newInputStream(resolvedId);
             }
     
             @Override
-            public OutputStream write() throws IOException {
+            public OutputStream write() {
                 return newOutputStream(resolvedId);
             }
             
@@ -385,30 +438,27 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
         Path parent = path.getParent();
         long parentId = resolve(parent);
         if (parentId > 0) {
-            tmpl.update("UPDATE direntry SET mtime = ? WHERE id = ?", new Date(), parentId);
+            tmpl.update(query.UPDATE_MTIME, new Date(), parentId);
         }
     }
     
     private void delete(long id) throws IOException {
         if ("file".equals(typeOf(id))) {
-            tmpl.update("DELETE FROM blocks WHERE dir = ?", id);
+            tmpl.update(query.DELETE_BLOCKS, id);
         } else {
-            Integer childCount = tmpl.queryForObject("SELECT count(1) FROM direntry WHERE parent = ?", Integer.class, id);
-            if (childCount > 0) {
-                throw new IOException("Directory not empty");
-            }
+            verifyEmpty(id);
         }
-        tmpl.update("DELETE FROM direntry WHERE id = ?", id);
+        tmpl.update(query.DELETE_FILE, id);
     }
     
     
     private String typeOf(long id) {
-        return tmpl.queryForObject("SELECT type FROM direntry WHERE id = ?", new Object[] { id }, String.class);
+        return tmpl.queryForObject(query.GET_TYPE, new Object[] { id }, String.class);
     }
     
     private void truncate(long id) {
-        tmpl.update("DELETE FROM blocks WHERE dir = ?", id);
-        tmpl.update("UPDATE direntry SET size = 0, mtime = ? WHERE id = ?", new Date(), id);
+        tmpl.update(query.DELETE_BLOCKS, id);
+        tmpl.update(query.UPDATE_SIZE_MTIME, 0, new Date(), id);
     }
     
     
@@ -428,10 +478,9 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
     }
 
     private void verifyEmpty(long dir) throws IOException {
-        long count = tmpl.queryForObject("SELECT count(1) FROM direntry WHERE parent = ?",
-                new Object[] { dir }, int.class);
-        if (count > 0) {
-            throw new IOException("Target not empty " + dir);
+        Integer childCount = tmpl.queryForObject(query.COUNT_FILES, Integer.class, dir);
+        if (childCount != null && childCount > 0) {
+            throw new IOException("Directory not empty " + dir);
         }
     }
 
@@ -466,7 +515,7 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
             }
         }
         if ("file".equals(sourceType)) {
-            tmpl.update("INSERT INTO blocks SELECT ?, seq, data FROM blocks WHERE dir = ?", targetId, sourceId);
+            tmpl.update(query.COPY_BLOCKS, targetId, sourceId);
         }
     }
 
@@ -503,26 +552,24 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
             }
             delete(targetId);
         }
-        tmpl.update("UPDATE direntry SET parent = ?, name = ? WHERE id = ?",
-                newParentId, target.getFileName().toString(), sourceId);
+        tmpl.update(query.MOVE_FILE, newParentId, target.getFileName().toString(), sourceId);
         
         // Update both old and new parent's mtime
-        tmpl.update("UPDATE direntry SET mtime = ? WHERE id in (?, ?)",
-                new Date(), oldParentId, newParentId);
+        tmpl.update(query.UPDATE_MTIME2, new Date(), oldParentId, newParentId);
     }
 
     @Override
-    public boolean isSameFile(Path path, Path path2) throws IOException {
+    public boolean isSameFile(Path path, Path path2) {
         return resolve(path) == resolve(path2);
     }
 
     @Override
-    public boolean isHidden(Path path) throws IOException {
+    public boolean isHidden(Path path) {
         return false;
     }
 
     @Override
-    public FileStore getFileStore(Path path) throws IOException {
+    public FileStore getFileStore(Path path) {
         return null;
     }
 
@@ -552,7 +599,7 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
                 }
     
                 @Override
-                public void setTimes(FileTime lastModifiedTime, FileTime lastAccessTime, FileTime createTime) throws IOException {
+                public void setTimes(FileTime lastModifiedTime, FileTime lastAccessTime, FileTime createTime) {
                     MysqlFileSystemProvider.this.setTimes(path, lastModifiedTime, lastAccessTime, createTime);
                 }
             };
@@ -571,7 +618,7 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
         if (id == 0L) {
             throw new NoSuchFileException(path.toString());
         }
-        return (A) tmpl.query("SELECT id, type, size, ctime, mtime, atime FROM direntry WHERE id = ?", rs -> {
+        return (A) tmpl.query(query.GET_ATTRS, rs -> {
             if (!rs.next()) {
                 return null;
             }
@@ -586,12 +633,12 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
     }
 
     @Override
-    public Map<String, Object> readAttributes(Path path, String attributes, LinkOption... options) throws IOException {
+    public Map<String, Object> readAttributes(Path path, String attributes, LinkOption... options) {
         return null;
     }
 
     @Override
-    public void setAttribute(Path path, String attribute, Object value, LinkOption... options) throws IOException {
+    public void setAttribute(Path path, String attribute, Object value, LinkOption... options) {
         throw new ReadOnlyFileSystemException();
     }
     
@@ -601,7 +648,7 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
         if (id == 0L) {
             return;
         }
-        tmpl.update("UPDATE direntry SET mtime = ?, atime = ?, ctime = ? WHERE id = ?",
+        tmpl.update(query.SET_TIMES,
                 new Date(lastModifiedTime.toMillis()),
                 new Date(lastAccessTime.toMillis()),
                 new Date(createTime.toMillis()),
@@ -613,18 +660,18 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
         if (!(path.getFileSystem() instanceof MysqlFileSystem)) {
             throw new RuntimeException("Bad filesystem: " + path.getFileSystem());
         }
-        Long id = queryFor(Long.class, "SELECT id FROM direntry WHERE parent = 0 AND name = ?",
-                ((MysqlFileSystem)path.getFileSystem()).root);
+        Long id = 0L;
+        String name = ((MysqlFileSystem)path.getFileSystem()).root;
+        id = queryFor(Long.class, query.RESOLVE, id, name);
         Iterator<Path> it = path.iterator();
         while (it.hasNext() && id != null) {
-            id = queryFor(Long.class, "SELECT id FROM direntry WHERE parent = ? AND name = ?",
-                    id, it.next().getFileName().toString());
+            id = queryFor(Long.class, query.RESOLVE, id, it.next().getFileName().toString());
         }
         return id != null ? id : 0L;
     }
     
     private List<Path> list(Path directory) {
-        return tmpl.query("SELECT name FROM direntry WHERE parent = ?",
+        return tmpl.query(query.LIST_NAMES,
                 new Object[] { resolve(directory) },
                 (rs, rowNum) -> directory.resolve(rs.getString(1)));
     }
@@ -638,8 +685,8 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
         if (parentId == 0L) {
             throw new IOException("Create directory first! " + path);
         }
-        String sql = "INSERT INTO direntry SET parent=?, type=?, name=?, size=0, ctime=?";
-        PreparedStatementCreatorFactory factory = new PreparedStatementCreatorFactory(sql,
+        PreparedStatementCreatorFactory factory = new PreparedStatementCreatorFactory(
+                query.CREATE_FILE,
                 Types.INTEGER, Types.VARCHAR, Types.VARCHAR, Types.TIMESTAMP);
         factory.setReturnGeneratedKeys(true);
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -652,7 +699,7 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
         tmpl.update(factory.newPreparedStatementCreator(params), keyHolder);
         long newId = keyHolder.getKey().longValue();
         // Update parent's mtime
-        tmpl.update("UPDATE direntry SET mtime = ? WHERE id = ?", new Date(), parentId);
+        tmpl.update(query.UPDATE_MTIME, new Date(), parentId);
         return newId;
     }
 
