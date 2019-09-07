@@ -1,11 +1,11 @@
-package com.theorem.ftp.commands;
+package com.impact.vfs.ftpd.commands;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.StringTokenizer;
 
-import com.theorem.ftp.CurrentInfo;
-import com.theorem.ftp.Global;
+import com.impact.vfs.ftpd.CurrentInfo;
+import com.impact.vfs.ftpd.Global;
 
 
 /**

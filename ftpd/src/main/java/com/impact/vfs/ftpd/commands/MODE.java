@@ -1,4 +1,4 @@
-package com.theorem.ftp.commands;
+package com.impact.vfs.ftpd.commands;
 
 /**
  * MODE Command.

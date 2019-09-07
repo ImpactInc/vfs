@@ -1,4 +1,4 @@
-package org.forkalsrud.mysqlfs;
+package com.impact.vfs.mysql;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,7 +16,7 @@ import java.util.Set;
 /**
  * Created by knut on 2017/05/05.
  */
-public class LocalCopySeekableByteChannel implements SeekableByteChannel {
+class LocalCopySeekableByteChannel implements SeekableByteChannel {
     
     interface Sync {
         InputStream read() throws IOException;
@@ -24,18 +24,16 @@ public class LocalCopySeekableByteChannel implements SeekableByteChannel {
         void delete() throws IOException;
     }
     
-    private long data;
-    private Sync sync;
-    private Set<? extends OpenOption> options;
-    private SeekableByteChannel seekable;
-    private Path tempFile;
+    private final Sync sync;
+    private final Set<? extends OpenOption> options;
+    private final SeekableByteChannel seekable;
+    private final Path tempFile;
     
-    public LocalCopySeekableByteChannel(long data, Sync sync, Set<? extends OpenOption> options) throws IOException {
-        this.data = data;
+    public LocalCopySeekableByteChannel(Sync sync, Set<? extends OpenOption> options) throws IOException {
         this.sync = sync;
         this.options = Collections.unmodifiableSet(new HashSet<>(options));
         
-        tempFile = Files.createTempFile("mysqlfs-", String.valueOf(data));
+        tempFile = Files.createTempFile("mysqlfs-", null);
         if (!options.contains(StandardOpenOption.TRUNCATE_EXISTING)) {
             InputStream src = sync.read();
             Files.copy(src, tempFile);

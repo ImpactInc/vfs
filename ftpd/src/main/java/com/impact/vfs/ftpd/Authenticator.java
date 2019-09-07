@@ -26,7 +26,7 @@
 // to be used.  The authorize method returns true if the authentication
 // worked, false if it failed.
 
-package com.theorem.ftp;
+package com.impact.vfs.ftpd;
 
 import java.nio.file.Path;
 

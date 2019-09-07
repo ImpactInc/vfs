@@ -16,13 +16,14 @@ The biggest challenges have been:
   needed, so you can't access just `/`.
 
 * Jackrabbit's "resource" knows whether it is a "blob"
-  or a "collection".  Thus the API is no distiction between
-  creating a file versus a directory. On we WebDAV protocol
-  side there is a difference, i.e. MKCOL versus PUT, so
-  There's a bit of hackery in place to carry that through
-  to `SimpleDavResource.addMember()`.
-  The gist of it is a dynamic proxy on `InputContext` to
-  expose a new property: "METHOD".
+  or a "collection".  Thus the API affords no
+  distinction between creating a file versus a
+  directory. On we WebDAV protocol side there is a
+  difference, i.e. MKCOL versus PUT, so There's a bit
+  of hackery in place to carry that through to
+  `SimpleDavResource.addMember()`.  The gist of it is a
+  dynamic proxy on `InputContext` to expose a new
+  property: "METHOD".
 
 
 The Jackrabbit software is distributed under the Apache

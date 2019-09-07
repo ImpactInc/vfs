@@ -1,4 +1,4 @@
-package com.theorem.ftp.commands;
+package com.impact.vfs.ftpd.commands;
 
 import java.io.*;
 import java.net.Socket;
@@ -8,7 +8,7 @@ import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import com.theorem.ftp.*;
+import com.impact.vfs.ftpd.*;
 
 
 // STORe a file, could do STOU (store with unique file name).

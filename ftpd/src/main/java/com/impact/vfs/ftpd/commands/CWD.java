@@ -1,12 +1,11 @@
-package com.theorem.ftp.commands;
+package com.impact.vfs.ftpd.commands;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import com.theorem.ftp.CurrentInfo;
-import com.theorem.ftp.Global;
-import com.theorem.ftp.ShowDisplayFile;
+import com.impact.vfs.ftpd.CurrentInfo;
+import com.impact.vfs.ftpd.Global;
+import com.impact.vfs.ftpd.ShowDisplayFile;
 
 
 // Also handles CDUP.

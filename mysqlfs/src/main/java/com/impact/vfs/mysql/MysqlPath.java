@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.forkalsrud.mysqlfs;
+package com.impact.vfs.mysql;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,6 +34,9 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 
+/**
+ * Standard Unix path, from OpenJDK
+ */
 public class MysqlPath implements Path {
 
     private final MysqlFileSystem fileSystem;
@@ -282,9 +285,9 @@ public class MysqlPath implements Path {
     }
 
     public URI toUri() {
-        // TODO
-        return null;
+        return URI.create(fileSystem.provider().getScheme() + ":" + fileSystem.root + this);
     }
+
 
     public MysqlPath toAbsolutePath() {
         if (isAbsolute()) {

@@ -1,4 +1,4 @@
-package org.forkalsrud.vfs.examples;
+package com.impact.vfs.examples;
 
 
 import java.io.*;
@@ -26,19 +26,19 @@ import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.forkalsrud.mysqlfs.MysqlFileSystemProvider;
-import org.forkalsrud.webdav.SimpleDavLocatorFactory;
-import org.forkalsrud.webdav.SimpleDavResourceFactory;
-import org.forkalsrud.webdav.SimpleDavSessionProvider;
-import org.forkalsrud.webdav.SimpleWebdavServlet;
+import com.impact.vfs.mysql.MysqlFileSystemProvider;
+import com.impact.vfs.webdav.SimpleDavLocatorFactory;
+import com.impact.vfs.webdav.SimpleDavResourceFactory;
+import com.impact.vfs.webdav.SimpleDavSessionProvider;
+import com.impact.vfs.webdav.SimpleWebdavServlet;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.util.FileCopyUtils;
 
-import com.theorem.ftp.Authenticator;
-import com.theorem.ftp.Ftpd;
+import com.impact.vfs.ftpd.Authenticator;
+import com.impact.vfs.ftpd.Ftpd;
 
 
 public class Main {
@@ -55,8 +55,14 @@ public class Main {
     @Option(name = "--jdbcpassword", aliases = { "--jdbcpwd" }, usage = "JDBC password")
     public String jdbcPassword = "";
     
-    @Option(name = "--rootdir", usage = "Use plan file system, with specified directory as root")
+    @Option(name = "--rootdir", usage = "Use native file system, with specified directory as root")
     public String useFilesystemRoot;
+    
+    @Option(name = "--zip", usage = "Use a ZIP archive as root")
+    public String zipFile;
+    
+    @Option(name = "--s3bucket", usage = "Use an AWS S3 bucket as root ()")
+    public String s3Bucket;
     
     @Option(name = "--help", usage = "Print help message")
     public boolean help = false;
@@ -85,6 +91,10 @@ public class Main {
 
         if (useFilesystemRoot != null) {
             root = mountFile(useFilesystemRoot);
+        } else if (zipFile != null) {
+            root = mountZip(zipFile);
+        } else if (s3Bucket != null) {
+            root = mountS3(s3Bucket);
         } else {
             dataSource = dbConnect();
             new DbMigration().ensureSchemaPresent("testroot");
@@ -131,11 +141,6 @@ public class Main {
     
     Server startWebServer() throws Exception {
 
-        // Path fsRoot = mountFile(new File(System.getProperty("user.home"), "tmp").getAbsolutePath());
-//        Path fsRoot = mountS3("eventrouting-test");
-        // Path fsRoot = mountZip(new File(System.getProperty("user.home"), "demo.zip").getAbsolutePath());
-    
-    
         final Server server = new Server(8080);
     
         RequestLogHandler requestLogHandler = new RequestLogHandler();
@@ -204,7 +209,7 @@ public class Main {
     
     
     
-    static Path mountFile(String rootPath) throws IOException {
+    static Path mountFile(String rootPath) {
         return new File(rootPath).toPath();
     }
     
@@ -237,7 +242,7 @@ public class Main {
     }
     
     
-    public Ftpd startFtpServer() throws IOException {
+    public Ftpd startFtpServer() {
     
         Ftpd instance = new Ftpd();
 
@@ -308,10 +313,10 @@ public class Main {
     
         JdbcTemplate tmpl = new JdbcTemplate(dataSource);
         
-        boolean hasTable(String name) {
+        boolean missingTable(String name) {
             List<Boolean> present = tmpl.query("show tables like ?",
                     (rs, rowNum) -> name.equalsIgnoreCase(rs.getString(1)), name);
-            return !present.isEmpty() && present.stream().allMatch(p -> p);
+            return present.isEmpty() || !present.stream().allMatch(p -> p);
         }
     
         
@@ -333,12 +338,12 @@ public class Main {
 
         void ensureSchemaPresent(String rootName) throws IOException {
             
-            if (!hasTable("direntry")) {
+            if (missingTable("direntry")) {
                 System.out.println("Creating direntry");
                 applyResource("mysqlfs-schema-direntry.sql");
             }
     
-            if (!hasTable("blocks")) {
+            if (missingTable("blocks")) {
                 System.out.println("Creating blocks");
                 applyResource("mysqlfs-schema-blocks.sql");
             }
@@ -351,7 +356,7 @@ public class Main {
             // We have to have a directory within the root, so that the WebDAV mount can access something
             // This is a limitation of the WebDAV front end
             String dirname = "demo";
-            Long demoId = coalesce(tmpl.queryForList("select id from direntry where parent = ? and name = ?", Long.class, rootId, dirname));
+            long demoId = coalesce(tmpl.queryForList("select id from direntry where parent = ? and name = ?", Long.class, rootId, dirname));
             if (demoId == 0L) {
                 System.out.println("Creating " + dirname);
                 tmpl.update("insert into direntry (parent, type, name, size, ctime, mtime, atime) "

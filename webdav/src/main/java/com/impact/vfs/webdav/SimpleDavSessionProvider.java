@@ -1,20 +1,19 @@
-package org.forkalsrud.webdav;
-
-import org.apache.jackrabbit.webdav.DavException;
-import org.apache.jackrabbit.webdav.DavSessionProvider;
-import org.apache.jackrabbit.webdav.WebdavRequest;
+package com.impact.vfs.webdav;
 
 import javax.servlet.http.HttpSession;
+
+import org.apache.jackrabbit.webdav.DavSessionProvider;
+import org.apache.jackrabbit.webdav.WebdavRequest;
 
 /**
  * Created by knut on 15/02/05.
  */
 public class SimpleDavSessionProvider implements DavSessionProvider {
 
-    public static final String ATTR = "org.forkalsrud.webdav.SimpleDavSession";
+    public static final String ATTR = SimpleDavSession.class.getCanonicalName();
 
     @Override
-    public boolean attachSession(WebdavRequest request) throws DavException {
+    public boolean attachSession(WebdavRequest request) {
 
         HttpSession httpSession = request.getSession();
         SimpleDavSession davSession = (SimpleDavSession)httpSession.getAttribute(ATTR);

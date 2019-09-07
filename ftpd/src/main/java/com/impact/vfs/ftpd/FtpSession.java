@@ -1,4 +1,4 @@
-/**
+/*
  * FTP Server Daemon
  * Copyright (C) 2000 Michael Lecuyer. All Rights reserved.
  * <p>
@@ -19,7 +19,7 @@
  * Or see [http://www.gnu.org/copyleft/lesser.html].
  */
 
-package com.theorem.ftp;
+package com.impact.vfs.ftpd;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -27,7 +27,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-import com.theorem.ftp.commands.*;
+import com.impact.vfs.ftpd.commands.*;
 
 
 /**

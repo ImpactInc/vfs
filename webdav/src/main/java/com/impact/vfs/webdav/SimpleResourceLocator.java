@@ -1,10 +1,11 @@
-package org.forkalsrud.webdav;
+package com.impact.vfs.webdav;
 
 import org.apache.jackrabbit.webdav.DavLocatorFactory;
 import org.apache.jackrabbit.webdav.DavResourceLocator;
 import org.apache.jackrabbit.webdav.util.EncodeUtil;
 
 import java.nio.file.Path;
+import java.util.Objects;
 
 
 /**
@@ -43,7 +44,7 @@ public class SimpleResourceLocator implements DavResourceLocator {
     }
 
     private String computeHref(String prefix, String resourcePath) {
-        StringBuffer buf = new StringBuffer(prefix);
+        StringBuilder buf = new StringBuilder(prefix);
         // NOTE: no need to append the workspace path, since it is must
         // be part of the resource path.
         if (resourcePath != null) {
@@ -137,7 +138,7 @@ public class SimpleResourceLocator implements DavResourceLocator {
     @Override
     public boolean isSameWorkspace(String workspaceName) {
         String thisWspName = getWorkspaceName();
-        return (thisWspName == null) ? workspaceName == null : thisWspName.equals(workspaceName);
+        return Objects.equals(thisWspName, workspaceName);
     }
 
     /**

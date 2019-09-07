@@ -1,10 +1,9 @@
-package com.theorem.ftp.commands;
+package com.impact.vfs.ftpd.commands;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import com.theorem.ftp.CurrentInfo;
-import com.theorem.ftp.Global;
+import com.impact.vfs.ftpd.CurrentInfo;
 
 
 public class STAT {
@@ -49,7 +48,7 @@ public class STAT {
             s.append("211- Connected from ").append(curCon.remoteSite).append('\n');
             s.append("211- Logged in as ").append(curCon.entity).append('\n');
         } catch (UnknownHostException uhe) {
-            ;
+            // ignore
         }
         
         s.append("211 End of status.\n");

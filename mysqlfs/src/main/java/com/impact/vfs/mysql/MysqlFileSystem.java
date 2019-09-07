@@ -16,34 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.forkalsrud.mysqlfs;
+package com.impact.vfs.mysql;
 
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.ByteBuffer;
-import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.FileSystem;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.nio.file.spi.FileSystemProvider;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.*;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
-import java.util.zip.GZIPInputStream;
-
-import javax.sql.DataSource;
-import javax.xml.bind.DatatypeConverter;
-
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 
 
 public class MysqlFileSystem extends FileSystem {
@@ -63,7 +44,7 @@ public class MysqlFileSystem extends FileSystem {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
     }
 
     @Override
@@ -133,7 +114,7 @@ public class MysqlFileSystem extends FileSystem {
     }
 
     @Override
-    public WatchService newWatchService() throws IOException {
+    public WatchService newWatchService() {
         throw new UnsupportedOperationException();
     }
 

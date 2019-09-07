@@ -9,7 +9,7 @@ A collection of file system related libraries.
 
 * `ftpd` is an adapter to access a `java.nio` file system using FTP
 
-* `examples` is a program to showcase the aforementioned libraries working together.
+* `examples` is a program to showcase the libraries working together.
 
 
 
@@ -18,7 +18,7 @@ Quick Start
 
 ```
 ./gradlew :examples:shadowJar
-java -jar examples/build/libs/examples-1.jar
+java -jar examples/build/libs/examples-1.0.jar
 ```
 
 Use `--help` on the latter to get summary information of options.

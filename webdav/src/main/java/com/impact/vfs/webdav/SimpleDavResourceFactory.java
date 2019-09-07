@@ -1,4 +1,4 @@
-package org.forkalsrud.webdav;
+package com.impact.vfs.webdav;
 
 import org.apache.jackrabbit.webdav.*;
 import org.apache.jackrabbit.webdav.lock.LockManager;

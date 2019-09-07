@@ -1,4 +1,4 @@
-package com.theorem.ftp;
+package com.impact.vfs.ftpd;
 
 // Class to track connections and anonymous logins.
 // Static so everyone can access it.

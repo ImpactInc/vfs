@@ -8,16 +8,7 @@ buildscript {
 }
 
 
-apply plugin: 'java'
 apply plugin: 'com.github.johnrengelman.shadow'
-
-version '1'
-
-sourceCompatibility = 1.8
-
-repositories {
-    mavenCentral()
-}
 
 dependencies {
 
@@ -44,6 +35,6 @@ dependencies {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'org.forkalsrud.vfs.examples.Main'
+        attributes 'Main-Class': 'com.impact.vfs.examples.Main'
     }
 }

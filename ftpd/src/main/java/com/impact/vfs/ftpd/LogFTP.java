@@ -1,4 +1,4 @@
-package com.theorem.ftp;
+package com.impact.vfs.ftpd;
 
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;

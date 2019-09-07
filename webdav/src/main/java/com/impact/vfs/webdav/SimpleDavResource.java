@@ -1,4 +1,4 @@
-package org.forkalsrud.webdav;
+package com.impact.vfs.webdav;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -286,7 +286,7 @@ public class SimpleDavResource implements DavResource {
     @Override
     public DavResourceIterator getMembers() {
 
-        List<DavResource> list = new ArrayList<DavResource>();
+        List<DavResource> list = new ArrayList<>();
         if (exists() && isCollection()) {
             try {
                 for (Path child : Files.newDirectoryStream(path)) {
@@ -384,18 +384,17 @@ public class SimpleDavResource implements DavResource {
     @Override
     public void copy(DavResource destination, boolean shallow) throws DavException {
 
-        final Path destinationFile = ((SimpleDavResource)destination).path;
+        final Path dstPath = ((SimpleDavResource)destination).path;
         try {
             if (Files.isDirectory(path)) {
-                Files.createDirectory(destinationFile);
+                Files.createDirectory(dstPath);
                 if (!shallow) {
                     final Path srcRoot = path;
-                    final Path dstRoot = destinationFile;
     
                     Files.walkFileTree(path, new FileVisitor<Path>() {
                         
                         Path dstFor(Path src) {
-                            return dstRoot.resolve(srcRoot.relativize(src));
+                            return dstPath.resolve(srcRoot.relativize(src));
                         }
                         
                         @Override
@@ -423,7 +422,7 @@ public class SimpleDavResource implements DavResource {
                     });
                 }
             } else if (Files.isRegularFile(path)) {
-                Files.copy(path, destinationFile);
+                Files.copy(path, dstPath);
             }
         } catch (IOException e) {
             throw new DavException(DavServletResponse.SC_INTERNAL_SERVER_ERROR, e);
@@ -567,27 +566,27 @@ public class SimpleDavResource implements DavResource {
         BasicFileAttributeView attrView = Files.getFileAttributeView(path, BasicFileAttributeView.class);
         try {
             BasicFileAttributes attrs = attrView.readAttributes();
-            properties.add(new DefaultDavProperty<String>(DavPropertyName.DISPLAYNAME, getDisplayName()));
+            properties.add(new DefaultDavProperty<>(DavPropertyName.DISPLAYNAME, getDisplayName()));
 
             if (attrs.isDirectory()) {
                 properties.add(new ResourceType(ResourceType.COLLECTION));
                 // Windows XP support
-                properties.add(new DefaultDavProperty<String>(DavPropertyName.ISCOLLECTION, "1"));
+                properties.add(new DefaultDavProperty<>(DavPropertyName.ISCOLLECTION, "1"));
             }
             if (attrs.isRegularFile()) {
                 properties.add(new ResourceType(ResourceType.DEFAULT_RESOURCE));
                 // Windows XP support
-                properties.add(new DefaultDavProperty<String>(DavPropertyName.ISCOLLECTION, "0"));
+                properties.add(new DefaultDavProperty<>(DavPropertyName.ISCOLLECTION, "0"));
             }
             HttpDateFormat fmt = HttpDateFormat.modificationDateFormat();
             long modified = attrs.lastModifiedTime() != null ? attrs.lastModifiedTime().toMillis() : 0L;
             String lastModifiedStr = fmt.format(new Date(modified));
-            properties.add(new DefaultDavProperty<String>(DavPropertyName.GETLASTMODIFIED, lastModifiedStr));
+            properties.add(new DefaultDavProperty<>(DavPropertyName.GETLASTMODIFIED, lastModifiedStr));
             long created = attrs.creationTime() != null ? attrs.creationTime().toMillis() : 0L;
             String createdStr = fmt.format(new Date(created));
-            properties.add(new DefaultDavProperty<String>(DavPropertyName.CREATIONDATE, createdStr));
+            properties.add(new DefaultDavProperty<>(DavPropertyName.CREATIONDATE, createdStr));
 
-            properties.add(new DefaultDavProperty<String>(DavPropertyName.GETCONTENTLENGTH, String.valueOf(attrs.size())));
+            properties.add(new DefaultDavProperty<>(DavPropertyName.GETCONTENTLENGTH, String.valueOf(attrs.size())));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

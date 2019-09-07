@@ -1,4 +1,4 @@
-package org.forkalsrud.webdav;
+package com.impact.vfs.webdav;
 
 import java.nio.file.Path;
 
@@ -39,7 +39,7 @@ public class SimpleDavLocatorFactory implements DavLocatorFactory {
         }
 
         // build prefix string and remove all prefixes from the given href.
-        StringBuffer b = new StringBuffer("");
+        StringBuilder b = new StringBuilder();
         if (prefix != null && prefix.length() > 0) {
             b.append(prefix);
             if (href.startsWith(prefix)) {
@@ -132,7 +132,7 @@ public class SimpleDavLocatorFactory implements DavLocatorFactory {
         if (wspPath == null) {
             return null;
         }
-        StringBuffer b = new StringBuffer(wspPath);
+        StringBuilder b = new StringBuilder(wspPath);
         if (repositoryPath != null) {
             if (!"/".equals(repositoryPath)) {
                 b.append(repositoryPath);

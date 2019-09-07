@@ -1,0 +1,15 @@
+
+
+subprojects {
+    apply plugin: 'java'
+
+    sourceCompatibility = '1.8'
+
+    group = 'com.impact.vfs'
+    version = '1.0'
+
+    repositories {
+        mavenCentral()
+    }
+
+}

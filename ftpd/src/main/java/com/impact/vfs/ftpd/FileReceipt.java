@@ -19,6 +19,12 @@
 * Or see [http://www.gnu.org/copyleft/lesser.html].
 */
 
+
+package com.impact.vfs.ftpd;
+
+import java.nio.file.Path;
+
+
 /**
  * Interface for running external file receipt notification and entry to directories.
  * It provides a means to extend finer grade permissions as well as notify other applications
@@ -28,12 +34,6 @@
  * it has no persistance from one file retrieval to another unless you provide some
  * static fields.
  */
-
-package com.theorem.ftp;
-
-import java.nio.file.Path;
-
-
 public interface FileReceipt {
     
     /**

@@ -40,7 +40,7 @@ running out of memory or have to resort to some form of non standard
 interface methods, perhaps both. The MySQL JDBC driver uses its own
 hacks to implement the LOB operations, which is less than ideal.
 
-Using a fairly standard file system inteface also makes it easier to
+Using a fairly standard file system interface also makes it easier to
 switch out different implementations. For example we can bolt a WebDAV
 front end onto the mysql file system to mount it remotely in a standard
 `macos` mount (Command+K in the Finder). I'm sure there is similar
@@ -76,8 +76,8 @@ naming convention. For example if you want the table to be named
 on the file system provider: `provider.setTablePrefix("iram_fs_");`.
 
 
-Portablility:
--------------
+Portability:
+------------
 
 This depends on MySQL, but porting to any other relational DB should be
 relatively easy. The code makes use of the MySQL specific `REPLACE`
@@ -87,3 +87,12 @@ or simply a `DELETE` followed by `INSERT` should also work.
 Another convenience is Spring Framework's `JdbcTemplate`, from which a handful
 of methods are used. If the Spring dependency is a problem that will have to be
 rewritten.
+
+
+License:
+--------
+
+The implementation of Path and PathMatcher are heavily based on the
+Unix equivalents from OpenJDK, which are GPLv2 licensed, so this module
+follows.
+

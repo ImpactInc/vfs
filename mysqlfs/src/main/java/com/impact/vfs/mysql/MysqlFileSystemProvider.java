@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.forkalsrud.mysqlfs;
+package com.impact.vfs.mysql;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -57,23 +57,24 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
 
     static class Query {
     
-        public final String GET_BLOCK;
-        public final String UPDATE_ATIME;
-        public final String REPLACE_BLOCK;
-        public final String UPDATE_SIZE_MTIME;
-        public final String UPDATE_MTIME;
-        public final String UPDATE_MTIME2;
-        public final String DELETE_BLOCKS;
-        public final String COUNT_FILES;
-        public final String DELETE_FILE;
-        public final String COPY_BLOCKS;
-        public final String MOVE_FILE;
-        public final String GET_ATTRS;
-        public final String SET_TIMES;
-        public final String LIST_NAMES;
-        public final String RESOLVE;
-        public final String CREATE_FILE;
-        public final String GET_TYPE;
+        final String GET_BLOCK;
+        final String UPDATE_ATIME;
+        final String REPLACE_BLOCK;
+        final String UPDATE_SIZE_MTIME;
+        final String UPDATE_MTIME;
+        final String UPDATE_MTIME2;
+        final String DELETE_BLOCKS;
+        final String COUNT_FILES;
+        final String DELETE_FILE;
+        final String COPY_BLOCKS;
+        final String MOVE_FILE;
+        final String GET_ATTRS;
+        final String SET_TIMES;
+        final String LIST_NAMES;
+        final String RESOLVE;
+        final String CREATE_FILE;
+        final String GET_TYPE;
+
 
         public Query(String prefix) {
         
@@ -336,7 +337,7 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
                 flushed = false;
             }
         
-            public void write(byte src[], int off, int len) {
+            public void write(byte[] src, int off, int len) {
                 
                 int remainingToWrite = len;
                 int srcPos = off;
@@ -382,7 +383,7 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
             }
             
             @Override
-            public void close() throws IOException {
+            public void close() {
                 // noop
             }
         };
@@ -403,7 +404,7 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
             }
         }
         final long resolvedId = id;
-        return new LocalCopySeekableByteChannel(id, new LocalCopySeekableByteChannel.Sync() {
+        return new LocalCopySeekableByteChannel(new LocalCopySeekableByteChannel.Sync() {
     
             @Override
             public InputStream read() {
@@ -471,6 +472,7 @@ public class MysqlFileSystemProvider extends FileSystemProvider {
             for (CopyOption o : options) {
                 if (StandardCopyOption.REPLACE_EXISTING == o) {
                     overwrite = true;
+                    break;
                 }
             }
             this.overwrite = overwrite;

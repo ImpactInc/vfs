@@ -12,7 +12,7 @@
  *  This code is Copyright (C) 2000 Michael Lecuyer. All Rights reserved.
  */
 
-package com.theorem.ftp.util;
+package com.impact.vfs.ftpd.util;
 
 import java.util.*;
 

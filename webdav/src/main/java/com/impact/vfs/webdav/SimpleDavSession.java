@@ -1,4 +1,4 @@
-package org.forkalsrud.webdav;
+package com.impact.vfs.webdav;
 
 import java.util.HashSet;
 
@@ -9,8 +9,8 @@ import org.apache.jackrabbit.webdav.DavSession;
  */
 public class SimpleDavSession implements DavSession {
 
-    HashSet<String> locks = new HashSet<String>();
-    HashSet<Object> refs = new HashSet<Object>();
+    HashSet<String> locks = new HashSet<>();
+    HashSet<Object> refs = new HashSet<>();
 
     @Override
     public void addReference(Object reference) {

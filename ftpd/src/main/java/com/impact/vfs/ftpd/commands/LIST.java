@@ -1,4 +1,4 @@
-package com.theorem.ftp.commands;
+package com.impact.vfs.ftpd.commands;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -10,16 +10,15 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.theorem.ftp.CurrentInfo;
-import com.theorem.ftp.Global;
-import com.theorem.ftp.util.Text;
+import com.impact.vfs.ftpd.CurrentInfo;
+import com.impact.vfs.ftpd.Global;
+import com.impact.vfs.ftpd.util.Text;
 
 
 public class LIST {
@@ -73,9 +72,7 @@ public class LIST {
             //global.log.logMsg("LIST: dir on " + listDir + " phys dir " + dir);
             Stream<Path> a = Files.list(dir);
 
-            ArrayList<Path> list = a.collect(Collectors.toCollection(ArrayList::new));
-
-            Collections.sort(list);
+            ArrayList<Path> list = a.sorted().collect(Collectors.toCollection(ArrayList::new));
 
             //global.log.logMsg("showList: before sort.");
             //for (i = 0; i < alen; i++)

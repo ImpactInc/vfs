@@ -1,4 +1,4 @@
-package org.forkalsrud.mysqlfs;
+package com.impact.vfs.mysql;
 
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 
 
 /**
- * Created by knut on 2017/04/28.
+ * Standard path matcher, from OpenJDK
  */
 public class GeneralPathMatcher implements PathMatcher {
     

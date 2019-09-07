@@ -1,4 +1,4 @@
-package com.theorem.ftp.util;
+package com.impact.vfs.ftpd.util;
 
 import java.util.Vector;
 

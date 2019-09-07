@@ -1,4 +1,4 @@
-/**
+/*
  * FTP Server Daemon
  * Copyright (C) 2000 Michael Lecuyer. All Rights reserved.
  * <p>
@@ -19,7 +19,7 @@
  * Or see [http://www.gnu.org/copyleft/lesser.html].
  */
 
-package com.theorem.ftp;
+package com.impact.vfs.ftpd;
 
 import java.io.*;
 import java.net.*;
@@ -39,8 +39,6 @@ public class Ftpd implements Runnable {
 
     ThreadGroup ftpSesGroup = new ThreadGroup("FTP Session");
     
-    public void setPort(int port) {
-    }
     /**
      * Initialize from config
      */
@@ -51,7 +49,7 @@ public class Ftpd implements Runnable {
         // local copy for main() for printing messages.
         global = ftpcfg.getGlobal();
     
-        global.FTPPort = 12121;
+        global.FTPPort = port;
         global.setServerIdentification(copyMsg);
         global.setAuthenticator(authenticator);
     }

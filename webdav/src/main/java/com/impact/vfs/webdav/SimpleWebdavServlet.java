@@ -1,20 +1,15 @@
-package org.forkalsrud.webdav;
+package com.impact.vfs.webdav;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Enumeration;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.apache.jackrabbit.webdav.*;
 import org.apache.jackrabbit.webdav.io.InputContext;
-import org.apache.jackrabbit.webdav.io.InputContextImpl;
 import org.apache.jackrabbit.webdav.server.AbstractWebdavServlet;
 
 
@@ -41,16 +36,6 @@ public class SimpleWebdavServlet extends AbstractWebdavServlet {
         out.println();
     }
 
-    /*
-    @Override
-    protected void service(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        
-        dumpHeaders(request);
-        super.service(request, response);
-        
-    }
-    */
     
     @Override
     protected void doPut(WebdavRequest request, WebdavResponse response,
@@ -72,15 +57,11 @@ public class SimpleWebdavServlet extends AbstractWebdavServlet {
     protected InputContext getInputContext(DavServletRequest request, InputStream in) {
         final InputContext delegate = super.getInputContext(request, in);
         return (InputContext)Proxy.newProxyInstance(getClass().getClassLoader(),
-                new Class[] { InputContext.class },
-                new InvocationHandler() {
-                    @Override
-                    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                        if ("getProperty".equals(method.getName()) && "METHOD".equals(args[0])) {
-                            return request.getMethod();
-                        }
-                        return method.invoke(delegate, args);
+                new Class[] { InputContext.class }, (proxy, method, args) -> {
+                    if ("getProperty".equals(method.getName()) && "METHOD".equals(args[0])) {
+                        return request.getMethod();
                     }
+                    return method.invoke(delegate, args);
                 });
     }
 

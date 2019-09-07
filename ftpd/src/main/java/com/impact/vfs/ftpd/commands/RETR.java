@@ -1,4 +1,4 @@
-package com.theorem.ftp.commands;
+package com.impact.vfs.ftpd.commands;
 
 import java.io.*;
 import java.net.Socket;
@@ -6,7 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
 
-import com.theorem.ftp.*;
+import com.impact.vfs.ftpd.*;
 
 
 /**

@@ -1,4 +1,4 @@
-package org.forkalsrud.mysqlfs;
+package com.impact.vfs.mysql;
 
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;

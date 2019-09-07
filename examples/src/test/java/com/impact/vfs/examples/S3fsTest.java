@@ -1,4 +1,4 @@
-package org.forkalsrud.vfs.examples;
+package com.impact.vfs.examples;
 
 import java.io.File;
 import java.io.FileReader;

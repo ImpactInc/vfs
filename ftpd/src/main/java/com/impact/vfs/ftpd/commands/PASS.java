@@ -1,13 +1,13 @@
-package com.theorem.ftp.commands;
+package com.impact.vfs.ftpd.commands;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import com.theorem.ftp.CurrentInfo;
-import com.theorem.ftp.DataSocket;
-import com.theorem.ftp.Global;
+import com.impact.vfs.ftpd.CurrentInfo;
+import com.impact.vfs.ftpd.DataSocket;
+import com.impact.vfs.ftpd.Global;
 
 
 public class PASS {

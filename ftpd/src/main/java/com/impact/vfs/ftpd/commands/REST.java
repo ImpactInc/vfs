@@ -1,7 +1,7 @@
-package com.theorem.ftp.commands;
+package com.impact.vfs.ftpd.commands;
 
-import com.theorem.ftp.CurrentInfo;
-import com.theorem.ftp.Restore;
+import com.impact.vfs.ftpd.CurrentInfo;
+import com.impact.vfs.ftpd.Restore;
 
 
 /**

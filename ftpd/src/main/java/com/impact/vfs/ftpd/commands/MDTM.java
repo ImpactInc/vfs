@@ -1,17 +1,15 @@
-package com.theorem.ftp.commands;
+package com.impact.vfs.ftpd.commands;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.StringTokenizer;
 import java.util.TimeZone;
 
-import com.theorem.ftp.CurrentInfo;
-import com.theorem.ftp.Global;
+import com.impact.vfs.ftpd.CurrentInfo;
+import com.impact.vfs.ftpd.Global;
 
 
 public class MDTM {

@@ -1,8 +1,5 @@
-package com.theorem.ftp;
+package com.impact.vfs.ftpd;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
