@@ -5,9 +5,9 @@ A collection of file system related libraries.
 
 * `mysqlfs` is a `java.nio` file system implemented on top of two DB tables.
 
-* `webdav` is an adapter to access a `java.nio` file system using WebDAV
+* `webdav` is an adapter to access a `java.nio` file system using WebDAV.
 
-* `ftpd` is an adapter to access a `java.nio` file system using FTP
+* `ftpd` is an adapter to access a `java.nio` file system using FTP.
 
 * `examples` is a program to showcase the libraries working together.
 

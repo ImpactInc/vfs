@@ -8,3 +8,29 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     testRuntime 'mysql:mysql-connector-java:6.0.6'
 }
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+
+            pom {
+                name = 'mysqlfs'
+                artifactId = 'vfs-mysql'
+                description = 'A java.nio file system implementation based on two MySQL tables.'
+                url = 'https://github.com/ImpactInc/vfs/tree/master/mysqlfs'
+                licenses {
+                    license {
+                        name = 'GPL v2'
+                        url = 'https://www.gnu.org/licenses/gpl-2.0.txt'
+                    }
+                    license {
+                        name = 'ASL v2'
+                        url = 'https://www.apache.org/licenses/LICENSE-2.0.html'
+                    }
+                }
+            }
+        }
+
+    }
+}
+

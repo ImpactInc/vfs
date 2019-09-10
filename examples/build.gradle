@@ -38,3 +38,27 @@ jar {
         attributes 'Main-Class': 'com.impact.vfs.examples.Main'
     }
 }
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+
+            pom {
+                name = 'Example App'
+                artifactId = 'vfs-examples'
+                description = 'Program to showcase the libraries working together.'
+                url = 'https://github.com/ImpactInc/vfs/tree/master/examples'
+                licenses {
+                    license {
+                        name = 'GPL v2'
+                        url = 'https://www.gnu.org/licenses/gpl-2.0.txt'
+                    }
+                    license {
+                        name = 'ASL v2'
+                        url = 'https://www.apache.org/licenses/LICENSE-2.0.html'
+                    }
+                }
+            }
+        }
+    }
+}

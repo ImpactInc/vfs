@@ -35,7 +35,7 @@ public interface SortFilter {
     void tempSet(int i);
     
     /**
-     * Return true for a > b.
+     * Return true for a &gt; b.
      * Compare the indexed object against the temp object.
      *
      * @param i Index within object to compare.

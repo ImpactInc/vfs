@@ -10,7 +10,7 @@ public class QSort {
      * No return value since the object will be sorted in place.
      *
      * @param o Collection object to be sorted.
-     * @parem sc sort comparison class.
+     * @param sc sort comparison class.
      */
     public QSort(Object o, int nItems, SortFilter sc) {
         int i;

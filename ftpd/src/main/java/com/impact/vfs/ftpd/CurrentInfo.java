@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 
 /**
- * Class to hold current information & requests for the current entity.
+ * Class to hold current information &amp; requests for the current entity.
  * Tracks working directory and read/write permissions on files/directories.
  * Home directory, if supported, is a virtual dir entry held here
  * but known to Virtual class.

@@ -6,3 +6,24 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
 
 }
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+
+            pom {
+                name = 'ftpd'
+                artifactId = 'vfs-ftpd'
+                description = 'Adapter to access a `java.nio` file system using FTP.'
+                url = 'https://github.com/ImpactInc/vfs/tree/master/ftpd'
+                licenses {
+                    license {
+                        name = 'GPL v2'
+                        url = 'https://www.gnu.org/licenses/gpl-2.0.txt'
+                    }
+                }
+            }
+        }
+
+    }
+}

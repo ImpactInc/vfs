@@ -2,14 +2,66 @@
 
 subprojects {
     apply plugin: 'java'
+    apply plugin: 'maven-publish'
+    apply plugin: 'signing'
 
     sourceCompatibility = '1.8'
 
-    group = 'com.impact.vfs'
+    group = 'com.impact'
     version = '1.0'
 
     repositories {
         mavenCentral()
     }
 
+    task sourcesJar(type: Jar) {
+        from sourceSets.main.allJava
+        archiveClassifier = 'sources'
+    }
+
+    task javadocJar(type: Jar) {
+        from javadoc
+        archiveClassifier = 'javadoc'
+    }
+
+    publishing {
+        publications {
+            maven(MavenPublication) {
+
+                from components.java
+                artifact sourcesJar
+                artifact javadocJar
+
+
+                pom {
+                    developers {
+                        developer {
+                            name = 'Knut Forkalsrud'
+                            email = 'knut@impact.com'
+                            organization = 'Impact Inc'
+                            organizationUrl = 'https://engineering.impact.com/'
+                        }
+                    }
+                    scm {
+                        connection = 'scm:git:git://github.com:ImpactInc/vfs.git'
+                        developerConnection = 'scm:git:ssh://github.com:ImpactInc/vfs.git'
+                        url = 'https://github.com/ImpactInc/vfs/tree/master'
+                    }
+                }
+            }
+
+        }
+
+        repositories {
+            maven {
+                name = 'myRepo'
+                url = "file://${buildDir}/repo"
+            }
+        }
+    }
+
+    signing {
+        sign publishing.publications.maven
+    }
 }
+

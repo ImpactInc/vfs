@@ -14,3 +14,24 @@ dependencies {
 test {
   systemProperty "java.awt.headless", "true"
 }
+
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+
+            pom {
+                name = 'WebDAV Adapter'
+                artifactId = 'vfs-webdav'
+                description = 'Adapter to access a `java.nio` file system using WebDAV.'
+                url = 'https://github.com/ImpactInc/vfs/tree/master/webdav'
+                licenses {
+                    license {
+                        name = 'ASL v2'
+                        url = 'https://www.apache.org/licenses/LICENSE-2.0.html'
+                    }
+                }
+            }
+        }
+    }
+}
