@@ -55,7 +55,11 @@ subprojects {
         repositories {
             maven {
                 name = 'mavencentral'
-                url = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+                url = mavenCentralPublishingRepo
+                credentials {
+                    username mavenCentralUsername
+                    password mavenCentralPassword
+                }
             }
         }
     }
