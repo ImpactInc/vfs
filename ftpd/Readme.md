@@ -18,3 +18,23 @@ Edits include:
 
 The original code was distributed under the LGPL license, so
 this module is also covered by the same `license.txt`.
+
+
+Maven Central
+-------------
+
+Maven dependency:
+
+```
+<dependency>
+  <groupId>com.impact</groupId>
+  <artifactId>vfs-ftpd</artifactId>
+  <version>1.0</version>
+</dependency>
+```
+
+Gradle:
+
+```
+implementation 'com.impact:vfs-ftpd:1.0'
+```

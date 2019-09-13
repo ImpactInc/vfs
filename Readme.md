@@ -26,3 +26,23 @@ Use `--help` on the latter to get summary information of options.
 Without other options the command connects as user `root` without
 password to the default MySQL instance on localhost. In the `test`
 schema it adds two tables, `direntry` and `blocks`.
+
+
+Maven Central
+-------------
+
+Maven dependency:
+
+```
+<dependency>
+  <groupId>com.impact</groupId>
+  <artifactId>vfs-webdav</artifactId>
+  <version>1.0</version>
+</dependency>
+```
+
+Gradle:
+
+```
+implementation 'com.impact:vfs-webdav:1.0'
+```

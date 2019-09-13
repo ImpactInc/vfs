@@ -96,3 +96,22 @@ The implementation of Path and PathMatcher are heavily based on the
 Unix equivalents from OpenJDK, which are GPLv2 licensed, so this module
 follows.
 
+
+Maven Central
+-------------
+
+Maven dependency:
+
+```
+<dependency>
+  <groupId>com.impact</groupId>
+  <artifactId>vfs-mysql</artifactId>
+  <version>1.0</version>
+</dependency>
+```
+
+Gradle:
+
+```
+implementation 'com.impact:vfs-mysql:1.0'
+```
