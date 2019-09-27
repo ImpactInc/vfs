@@ -55,6 +55,12 @@ public class Main {
     @Option(name = "--jdbcpassword", aliases = { "--jdbcpwd" }, usage = "JDBC password")
     public String jdbcPassword = "";
     
+    @Option(name = "--tableprefix", usage = "Table prefix")
+    public String tablePrefix;
+    
+    @Option(name = "--mysqlroot", usage = "Name of root in mysqlfs")
+    public String mysqlRoot;
+
     @Option(name = "--rootdir", usage = "Use native file system, with specified directory as root")
     public String useFilesystemRoot;
     
@@ -66,6 +72,9 @@ public class Main {
     
     @Option(name = "--help", usage = "Print help message")
     public boolean help = false;
+    
+    @Option(name = "--no-schema", usage = "Disable Auto-initialized schema")
+    public boolean skipSchema = false;
 
     public static void main(String... args) throws Exception {
 
@@ -80,6 +89,7 @@ public class Main {
         try {
             parser.parseArgument(args);
         } catch (CmdLineException e) {
+            System.err.println(e.getMessage());
             help = true;
         }
         if (help) {
@@ -97,8 +107,11 @@ public class Main {
             root = mountS3(s3Bucket);
         } else {
             dataSource = dbConnect();
-            new DbMigration().ensureSchemaPresent("testroot");
-            root = mountMysqlfs("testroot");
+            String rootName = mysqlRoot != null ? mysqlRoot : "testroot";
+            if (!skipSchema) {
+                new DbMigration().ensureSchemaPresent(rootName);
+            }
+            root = mountMysqlfs(rootName);
         }
 
         Server server = startWebServer();
@@ -304,7 +317,7 @@ public class Main {
         
         MysqlFileSystemProvider provider = new MysqlFileSystemProvider();
         provider.setDataSource(dataSource);
-        
+        provider.setTablePrefix(tablePrefix);
         return provider.getFileSystemRoot(rootName);
     }
     
