@@ -44,7 +44,7 @@ public class MysqlFileSystemProviderTest {
         
         pool = new SingleConnectionDataSource();
         pool.setDriverClassName("com.mysql.cj.jdbc.Driver");
-        pool.setUrl("jdbc:mysql://localhost/mysqlfs");
+        pool.setUrl("jdbc:mysql://localhost/test");
         pool.setUsername("root");
         pool.setPassword("");
     
