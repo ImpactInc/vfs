@@ -1,4 +1,11 @@
 
+ext {
+    springVersion = '4.3.7.RELEASE'
+    jettyVersion = '9.2.29.v20191105'
+}
+
+
+
 
 subprojects {
     apply plugin: 'java'
